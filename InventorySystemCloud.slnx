@@ -1,0 +1,12 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/InventorySystemCloud.Api/InventorySystemCloud.Api.csproj" />
+    <Project Path="src/InventorySystemCloud.Application/InventorySystemCloud.Application.csproj" />
+    <Project Path="src/InventorySystemCloud.Domain/InventorySystemCloud.Domain.csproj" />
+    <Project Path="src/InventorySystemCloud.Infrastructure/InventorySystemCloud.Infrastructure.csproj" />
+    <Project Path="src/InventorySystemCloud.Shared/InventorySystemCloud.Shared.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/InventorySystemCloud.UnitTests/InventorySystemCloud.UnitTests.csproj" />
+  </Folder>
+</Solution>
