@@ -9,6 +9,7 @@ namespace InventorySystemCloud.Domain.Entities
     {
         [Key]
         public int Id { get; set; }
+        public Guid PublicId { get; set; } = Guid.NewGuid();
 
         [Required]
         [EmailAddress]
@@ -18,7 +19,6 @@ namespace InventorySystemCloud.Domain.Entities
         [Required]
         public string PasswordHash { get; set; } = string.Empty;
 
-        public string? CaptchaToken { get; set; }
 
         [Required]
         public UserRole Role { get; set; } = UserRole.Cashier;
@@ -30,6 +30,14 @@ namespace InventorySystemCloud.Domain.Entities
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         public DateTime? LastLogin { get; set; }
+
+        [Required]
+        [MaxLength(64)]
+        public string SecurityStamp { get; set; } = Guid.NewGuid().ToString("N");
+
+        public int FailedLoginAttempts { get; set; }
+
+        public DateTime? LockoutEnd { get; set; }
 
         // Navigation
         public ICollection<Sale> Sales { get; set; } = new List<Sale>();

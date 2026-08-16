@@ -1,9 +1,10 @@
+using InventorySystemCloud.Application.DTOs.Auth;
 using InventorySystemCloud.Domain.Entities;
 
 namespace InventorySystemCloud.Application.Interfaces
 {
     public interface IJwtTokenGenerator
     {
-        string GenerateToken(User user);
+        GeneratedToken GenerateToken(User user);
     }
 }

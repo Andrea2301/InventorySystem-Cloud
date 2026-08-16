@@ -26,6 +26,10 @@ namespace InventorySystemCloud.Infrastructure.Data
                 .HasIndex(u => u.Email)
                 .IsUnique();
 
+            modelBuilder.Entity<User>()
+                .HasIndex(u => u.PublicId)
+                .IsUnique();
+
             modelBuilder.Entity<Client>()
                 .HasIndex(c => c.DocumentNumber)
                 .IsUnique();

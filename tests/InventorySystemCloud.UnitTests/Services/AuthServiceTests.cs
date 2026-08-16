@@ -26,7 +26,11 @@ namespace InventorySystemCloud.UnitTests.Services
         private Mock<IJwtTokenGenerator> GetMockTokenGenerator()
         {
             var mock = new Mock<IJwtTokenGenerator>();
-            mock.Setup(g => g.GenerateToken(It.IsAny<User>())).Returns("fake_jwt_token_12345");
+            mock.Setup(g => g.GenerateToken(It.IsAny<User>())).Returns(new GeneratedToken
+            {
+                Value = "fake_jwt_token_12345",
+                ExpiresAt = DateTime.UtcNow.AddMinutes(30)
+            });
             return mock;
         }
 
@@ -89,7 +93,7 @@ namespace InventorySystemCloud.UnitTests.Services
             result.Should().NotBeNull();
             result.Success.Should().BeFalse();
             result.StatusCode.Should().Be(400);
-            result.Message.Should().Contain("Ya existe un usuario");
+            result.Message.Should().Contain("No fue posible completar el registro");
         }
 
         [Fact]

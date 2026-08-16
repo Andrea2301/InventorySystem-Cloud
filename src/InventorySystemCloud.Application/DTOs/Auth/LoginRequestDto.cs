@@ -4,11 +4,13 @@ namespace InventorySystemCloud.Application.DTOs.Auth
 {
     public class LoginRequestDto
     {
-        [Required(ErrorMessage = "El correo electrónico es obligatorio.")]
-        [EmailAddress(ErrorMessage = "Formato de correo electrónico inválido.")]
+        [Required]
+        [EmailAddress]
+        [MaxLength(150)]
         public string Email { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "La contraseña es obligatoria.")]
+        [Required]
+        [MaxLength(128)]
         public string Password { get; set; } = string.Empty;
     }
 }

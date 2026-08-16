@@ -40,7 +40,7 @@ namespace InventorySystemCloud.Api.Middleware
 
             var response = ApiResponse<string>.FailureResponse(
                 message: "Ha ocurrido un error interno en el servidor. Por favor intente más tarde.",
-                errors: new List<string> { exception.Message },
+                errors: new List<string>(),
                 statusCode: context.Response.StatusCode
             );
 
