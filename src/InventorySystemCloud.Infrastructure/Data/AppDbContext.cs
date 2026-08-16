@@ -13,6 +13,8 @@ namespace InventorySystemCloud.Infrastructure.Data
         public DbSet<AuditLog> AuditLogs { get; set; } = null!;
         public DbSet<Client> Clients { get; set; } = null!;
         public DbSet<Supplier> Suppliers { get; set; } = null!;
+        public DbSet<Purchase> Purchases { get; set; } = null!;
+        public DbSet<PurchaseDetail> PurchaseDetails { get; set; } = null!;
 
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
         {
@@ -60,6 +62,18 @@ namespace InventorySystemCloud.Infrastructure.Data
 
             modelBuilder.Entity<SaleDetail>()
                 .Property(sd => sd.TotalPrice)
+                .HasPrecision(18, 2);
+
+            modelBuilder.Entity<Purchase>()
+                .Property(p => p.TotalAmount)
+                .HasPrecision(18, 2);
+
+            modelBuilder.Entity<PurchaseDetail>()
+                .Property(pd => pd.UnitPrice)
+                .HasPrecision(18, 2);
+
+            modelBuilder.Entity<PurchaseDetail>()
+                .Property(pd => pd.TotalPrice)
                 .HasPrecision(18, 2);
         }
     }

@@ -14,6 +14,8 @@ namespace InventorySystemCloud.Application.Interfaces
         DbSet<AuditLog> AuditLogs { get; }
         DbSet<Client> Clients { get; }
         DbSet<Supplier> Suppliers { get; }
+        DbSet<Purchase> Purchases { get; }
+        DbSet<PurchaseDetail> PurchaseDetails { get; }
 
         Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
     }
