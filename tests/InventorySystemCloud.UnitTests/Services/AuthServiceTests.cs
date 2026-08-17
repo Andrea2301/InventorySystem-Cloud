@@ -35,12 +35,13 @@ namespace InventorySystemCloud.UnitTests.Services
         }
 
         [Fact]
-        public async Task RegisterAsync_WithValidData_ReturnsSuccessAndToken()
+        public async Task RegisterAsync_WithValidData_ReturnsSuccessAndToken_AndSendsWelcomeEmail()
         {
             // Arrange
             using var context = GetInMemoryDbContext();
             var mockTokenGen = GetMockTokenGenerator();
-            var authService = new AuthService(context, mockTokenGen.Object);
+            var mockEmail = new Mock<IEmailService>();
+            var authService = new AuthService(context, mockTokenGen.Object, mockEmail.Object);
 
             var request = new RegisterRequestDto
             {
@@ -61,6 +62,9 @@ namespace InventorySystemCloud.UnitTests.Services
 
             var userInDb = await context.Users.FirstOrDefaultAsync(u => u.Email == "testuser@bakery.com");
             userInDb.Should().NotBeNull();
+
+            // Verify welcome email was triggered
+            mockEmail.Verify(e => e.SendWelcomeEmailAsync("testuser@bakery.com", "testuser@bakery.com"), Times.Once);
         }
 
         [Fact]
@@ -69,6 +73,7 @@ namespace InventorySystemCloud.UnitTests.Services
             // Arrange
             using var context = GetInMemoryDbContext();
             var mockTokenGen = GetMockTokenGenerator();
+            var mockEmail = new Mock<IEmailService>();
 
             context.Users.Add(new User
             {
@@ -78,7 +83,7 @@ namespace InventorySystemCloud.UnitTests.Services
             });
             await context.SaveChangesAsync();
 
-            var authService = new AuthService(context, mockTokenGen.Object);
+            var authService = new AuthService(context, mockTokenGen.Object, mockEmail.Object);
 
             var request = new RegisterRequestDto
             {
@@ -94,6 +99,7 @@ namespace InventorySystemCloud.UnitTests.Services
             result.Success.Should().BeFalse();
             result.StatusCode.Should().Be(400);
             result.Message.Should().Contain("No fue posible completar el registro");
+            mockEmail.Verify(e => e.SendWelcomeEmailAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
         }
 
         [Fact]
@@ -102,6 +108,7 @@ namespace InventorySystemCloud.UnitTests.Services
             // Arrange
             using var context = GetInMemoryDbContext();
             var mockTokenGen = GetMockTokenGenerator();
+            var mockEmail = new Mock<IEmailService>();
 
             var rawPassword = "SecurePassword123";
             context.Users.Add(new User
@@ -112,7 +119,7 @@ namespace InventorySystemCloud.UnitTests.Services
             });
             await context.SaveChangesAsync();
 
-            var authService = new AuthService(context, mockTokenGen.Object);
+            var authService = new AuthService(context, mockTokenGen.Object, mockEmail.Object);
 
             var request = new LoginRequestDto
             {
@@ -137,6 +144,7 @@ namespace InventorySystemCloud.UnitTests.Services
             // Arrange
             using var context = GetInMemoryDbContext();
             var mockTokenGen = GetMockTokenGenerator();
+            var mockEmail = new Mock<IEmailService>();
 
             context.Users.Add(new User
             {
@@ -146,7 +154,7 @@ namespace InventorySystemCloud.UnitTests.Services
             });
             await context.SaveChangesAsync();
 
-            var authService = new AuthService(context, mockTokenGen.Object);
+            var authService = new AuthService(context, mockTokenGen.Object, mockEmail.Object);
 
             var request = new LoginRequestDto
             {

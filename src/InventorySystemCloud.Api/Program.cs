@@ -13,6 +13,10 @@ using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using QuestPDF.Infrastructure;
+
+// Configure QuestPDF license (Community License)
+QuestPDF.Settings.License = LicenseType.Community;
 
 var builder = WebApplication.CreateBuilder(args);
 var jwt = builder.Configuration.GetSection("Jwt");
@@ -25,6 +29,7 @@ if (string.IsNullOrWhiteSpace(secretKey) || Encoding.UTF8.GetByteCount(secretKey
     throw new InvalidOperationException("La configuración JWT es inválida. Configure una clave de al menos 32 bytes y ExpirationMinutes entre 5 y 60.");
 
 builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"));
+builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
 builder.Services.AddControllers();
 builder.Services.AddCors(options => options.AddPolicy("FrontendDevelopment", policy =>
     policy.WithOrigins("http://localhost:4200", "https://localhost:4200").AllowAnyHeader().AllowAnyMethod()));
@@ -43,8 +48,12 @@ if (!string.IsNullOrEmpty(connectionString))
     builder.Services.AddDbContext<AppDbContext>(options => options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
 else
     builder.Services.AddDbContext<AppDbContext>(options => options.UseInMemoryDatabase("InventoryDbDev"));
+
 builder.Services.AddScoped<IAppDbContext>(provider => provider.GetRequiredService<AppDbContext>());
 builder.Services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
+builder.Services.AddScoped<IPdfInvoiceGenerator, PdfInvoiceGenerator>();
+builder.Services.AddScoped<IEmailGenerator, EmailGenerator>();
+builder.Services.AddHttpClient<IEmailService, EmailService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IProductService, ProductService>();
 builder.Services.AddScoped<IClientService, ClientService>();

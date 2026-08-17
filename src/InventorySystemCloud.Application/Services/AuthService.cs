@@ -16,11 +16,16 @@ namespace InventorySystemCloud.Application.Services
         private static readonly string DummyPasswordHash = BCrypt.Net.BCrypt.HashPassword("not-a-valid-user-password", workFactor: PasswordWorkFactor);
         private readonly IAppDbContext _context;
         private readonly IJwtTokenGenerator _tokenGenerator;
+        private readonly IEmailService _emailService;
 
-        public AuthService(IAppDbContext context, IJwtTokenGenerator tokenGenerator)
+        public AuthService(
+            IAppDbContext context, 
+            IJwtTokenGenerator tokenGenerator,
+            IEmailService emailService)
         {
             _context = context;
             _tokenGenerator = tokenGenerator;
+            _emailService = emailService;
         }
 
         public async Task<ApiResponse<AuthResponseDto>> RegisterAsync(RegisterRequestDto request)
@@ -47,6 +52,16 @@ namespace InventorySystemCloud.Application.Services
 
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
+
+            // Send Welcome Email asynchronously
+            try
+            {
+                await _emailService.SendWelcomeEmailAsync(user.Email, user.Email);
+            }
+            catch
+            {
+                // Email delivery failure should not break user creation
+            }
 
             return ApiResponse<AuthResponseDto>.SuccessResponse(CreateAuthResponse(user), "Registro exitoso.", statusCode: 201);
         }

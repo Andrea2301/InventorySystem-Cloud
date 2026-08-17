@@ -14,11 +14,19 @@ namespace InventorySystemCloud.Application.Services
     {
         private readonly IAppDbContext _context;
         private readonly IAuditService _auditService;
+        private readonly IPdfInvoiceGenerator _pdfInvoiceGenerator;
+        private readonly IEmailService _emailService;
 
-        public SaleService(IAppDbContext context, IAuditService auditService)
+        public SaleService(
+            IAppDbContext context, 
+            IAuditService auditService,
+            IPdfInvoiceGenerator pdfInvoiceGenerator,
+            IEmailService emailService)
         {
             _context = context;
             _auditService = auditService;
+            _pdfInvoiceGenerator = pdfInvoiceGenerator;
+            _emailService = emailService;
         }
 
         public async Task<ApiResponse<SaleResponseDto>> CreateSaleAsync(CreateSaleDto request, Guid userPublicId)
@@ -110,6 +118,21 @@ namespace InventorySystemCloud.Application.Services
                 $"Venta #{sale.Id} registrada para cliente {client.FullName} ({client.DocumentNumber}) por total de {sale.TotalAmount:C2} {sale.Currency}");
 
             var responseDto = MapToResponseDto(sale, client, user);
+
+            // 7. Auto-send digital invoice via email if client has an email
+            if (!string.IsNullOrWhiteSpace(client.Email))
+            {
+                try
+                {
+                    var pdfBytes = _pdfInvoiceGenerator.GenerateInvoicePdf(responseDto);
+                    await _emailService.SendInvoiceEmailAsync(client.Email, responseDto, pdfBytes);
+                }
+                catch
+                {
+                    // Email delivery failure should not cancel the committed sale
+                }
+            }
+
             return ApiResponse<SaleResponseDto>.SuccessResponse(responseDto, "Venta registrada exitosamente.", statusCode: 201);
         }
 
@@ -152,6 +175,52 @@ namespace InventorySystemCloud.Application.Services
                 return ApiResponse<SaleResponseDto>.FailureResponse("Venta no encontrada.", statusCode: 404);
 
             return ApiResponse<SaleResponseDto>.SuccessResponse(MapToResponseDto(sale, sale.Client, sale.CreatedBy));
+        }
+
+        public async Task<ApiResponse<byte[]>> GetInvoicePdfAsync(int saleId)
+        {
+            var saleResult = await GetByIdAsync(saleId);
+            if (!saleResult.Success || saleResult.Data == null)
+                return ApiResponse<byte[]>.FailureResponse(saleResult.Message, statusCode: saleResult.StatusCode);
+
+            try
+            {
+                var pdfBytes = _pdfInvoiceGenerator.GenerateInvoicePdf(saleResult.Data);
+                return ApiResponse<byte[]>.SuccessResponse(pdfBytes, "Factura generada exitosamente.");
+            }
+            catch (Exception ex)
+            {
+                return ApiResponse<byte[]>.FailureResponse($"Error al generar la factura digital: {ex.Message}", statusCode: 500);
+            }
+        }
+
+        public async Task<ApiResponse<string>> SendInvoiceEmailAsync(int saleId)
+        {
+            var sale = await _context.Sales
+                .Include(s => s.Client)
+                .Include(s => s.CreatedBy)
+                .Include(s => s.SaleDetails)
+                    .ThenInclude(sd => sd.Product)
+                .FirstOrDefaultAsync(s => s.Id == saleId);
+
+            if (sale == null)
+                return ApiResponse<string>.FailureResponse("Venta no encontrada.", statusCode: 404);
+
+            if (sale.Client == null || string.IsNullOrWhiteSpace(sale.Client.Email))
+                return ApiResponse<string>.FailureResponse("El cliente de esta venta no tiene un correo electrónico registrado.", statusCode: 400);
+
+            try
+            {
+                var saleDto = MapToResponseDto(sale, sale.Client, sale.CreatedBy);
+                var pdfBytes = _pdfInvoiceGenerator.GenerateInvoicePdf(saleDto);
+                await _emailService.SendInvoiceEmailAsync(sale.Client.Email, saleDto, pdfBytes);
+
+                return ApiResponse<string>.SuccessResponse("Factura enviada exitosamente al correo del cliente.");
+            }
+            catch (Exception ex)
+            {
+                return ApiResponse<string>.FailureResponse($"Error al enviar correo con la factura: {ex.Message}", statusCode: 500);
+            }
         }
 
         public async Task<ApiResponse<SaleReportDto>> GetDailyReportAsync(DateTime? date = null)

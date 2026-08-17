@@ -51,6 +51,23 @@ namespace InventorySystemCloud.Api.Controllers
             return StatusCode(result.StatusCode, result);
         }
 
+        [HttpGet("{id:int}/invoice")]
+        public async Task<IActionResult> GetInvoice(int id)
+        {
+            var result = await _saleService.GetInvoicePdfAsync(id);
+            if (!result.Success || result.Data == null)
+                return StatusCode(result.StatusCode, result);
+
+            return File(result.Data, "application/pdf", $"Factura_Venta_{id:D6}.pdf");
+        }
+
+        [HttpPost("{id:int}/send-invoice")]
+        public async Task<IActionResult> SendInvoice(int id)
+        {
+            var result = await _saleService.SendInvoiceEmailAsync(id);
+            return StatusCode(result.StatusCode, result);
+        }
+
         [HttpGet("reports/daily")]
         public async Task<IActionResult> GetDailyReport([FromQuery] DateTime? date = null)
         {
