@@ -15,6 +15,7 @@ namespace InventorySystemCloud.Infrastructure.Data
         public DbSet<Supplier> Suppliers { get; set; } = null!;
         public DbSet<Purchase> Purchases { get; set; } = null!;
         public DbSet<PurchaseDetail> PurchaseDetails { get; set; } = null!;
+        public DbSet<RefreshToken> RefreshTokens { get; set; } = null!;
 
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
         {
@@ -38,6 +39,10 @@ namespace InventorySystemCloud.Infrastructure.Data
 
             modelBuilder.Entity<Supplier>()
                 .HasIndex(s => s.Email)
+                .IsUnique();
+
+            modelBuilder.Entity<RefreshToken>()
+                .HasIndex(rt => rt.Token)
                 .IsUnique();
 
             modelBuilder.Entity<Product>()

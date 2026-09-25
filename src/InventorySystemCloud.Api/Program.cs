@@ -26,15 +26,19 @@ var audience = jwt["Audience"];
 if (string.IsNullOrWhiteSpace(secretKey) || Encoding.UTF8.GetByteCount(secretKey) < 32 ||
     string.IsNullOrWhiteSpace(issuer) || string.IsNullOrWhiteSpace(audience) ||
     !int.TryParse(jwt["ExpirationMinutes"], out var expirationMinutes) || expirationMinutes is < 5 or > 60)
-    throw new InvalidOperationException("La configuración JWT es inválida. Configure una clave de al menos 32 bytes y ExpirationMinutes entre 5 y 60.");
+    throw new InvalidOperationException("jwt configuration is invalid. Please configure a secret key of at least 32 bytes and ExpirationMinutes between 5 and 60.");
+
+//Injecicion de dependencias
 
 builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"));
 builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
+builder.Services.Configure<CompanySettings>(builder.Configuration.GetSection("CompanySettings"));
+builder.Services.Configure<CloudinarySettings>(builder.Configuration.GetSection("CloudinarySettings"));
 builder.Services.AddControllers();
 builder.Services.AddCors(options => options.AddPolicy("FrontendDevelopment", policy =>
     policy.WithOrigins("http://localhost:4200", "https://localhost:4200").AllowAnyHeader().AllowAnyMethod()));
 builder.Services.Configure<ApiBehaviorOptions>(options =>
-    options.InvalidModelStateResponseFactory = _ => new BadRequestObjectResult(new { success = false, message = "La solicitud no es válida." }));
+    options.InvalidModelStateResponseFactory = _ => new BadRequestObjectResult(new { success = false, message = "The request is invalid." }));
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
@@ -50,10 +54,11 @@ else
     builder.Services.AddDbContext<AppDbContext>(options => options.UseInMemoryDatabase("InventoryDbDev"));
 
 builder.Services.AddScoped<IAppDbContext>(provider => provider.GetRequiredService<AppDbContext>());
+builder.Services.AddScoped<IImageStorageService, CloudinaryImageStorageService>();
 builder.Services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
 builder.Services.AddScoped<IPdfInvoiceGenerator, PdfInvoiceGenerator>();
 builder.Services.AddScoped<IEmailGenerator, EmailGenerator>();
-builder.Services.AddHttpClient<IEmailService, EmailService>();
+builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IProductService, ProductService>();
 builder.Services.AddScoped<IClientService, ClientService>();
@@ -61,6 +66,7 @@ builder.Services.AddScoped<ISupplierService, SupplierService>();
 builder.Services.AddScoped<IAuditService, AuditService>();
 builder.Services.AddScoped<ISaleService, SaleService>();
 builder.Services.AddScoped<IPurchaseService, PurchaseService>();
+builder.Services.AddScoped<IReportService, ReportService>();
 
 builder.Services.AddRateLimiter(options =>
 {
@@ -86,16 +92,40 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJw
         {
             var publicId = context.Principal?.FindFirstValue("sub");
             var stamp = context.Principal?.FindFirstValue("security_stamp");
-            if (!Guid.TryParse(publicId, out var id) || string.IsNullOrEmpty(stamp)) { context.Fail("Token inválido."); return; }
+            if (!Guid.TryParse(publicId, out var id) || string.IsNullOrEmpty(stamp)) { context.Fail("Invalid token."); return; }
             var db = context.HttpContext.RequestServices.GetRequiredService<AppDbContext>();
             var user = await db.Users.SingleOrDefaultAsync(u => u.PublicId == id);
-            if (user == null || !user.IsActive || user.SecurityStamp != stamp) context.Fail("Token inválido.");
+            if (user == null || !user.IsActive || user.SecurityStamp != stamp) context.Fail("Invalid token.");
         }
     };
 });
 builder.Services.AddAuthorization();
 
 var app = builder.Build();
+
+// Apply pending migrations and seed initial data automatically on startup
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    var logger = services.GetRequiredService<ILogger<Program>>();
+    var db = services.GetRequiredService<AppDbContext>();
+
+    if (!string.IsNullOrEmpty(connectionString))
+    {
+        try
+        {
+            db.Database.Migrate();
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error to apply automatic migrations to the database: {Message}", ex.Message);
+        }
+    }
+
+    // Seed initial admin user if not exists
+    await DataSeeder.SeedInitialAdminAsync(db, app.Configuration, logger);
+}
+
 app.UseMiddleware<GlobalExceptionHandlerMiddleware>();
 if (app.Environment.IsDevelopment()) { app.UseSwagger(); app.UseSwaggerUI(); }
 app.UseHttpsRedirection();

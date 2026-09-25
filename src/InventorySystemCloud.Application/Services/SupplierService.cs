@@ -47,7 +47,7 @@ namespace InventorySystemCloud.Application.Services
         {
             var supplier = await _context.Suppliers.FindAsync(id);
             if (supplier == null)
-                return ApiResponse<SupplierResponseDto>.FailureResponse("Proveedor no encontrado.", statusCode: 404);
+                return ApiResponse<SupplierResponseDto>.FailureResponse("Supplier not found.", statusCode: 404);
 
             return ApiResponse<SupplierResponseDto>.SuccessResponse(ToResponseDto(supplier));
         }
@@ -59,11 +59,11 @@ namespace InventorySystemCloud.Application.Services
 
             var companyExists = await _context.Suppliers.AnyAsync(s => s.CompanyName.ToLower() == company.ToLower());
             if (companyExists)
-                return ApiResponse<SupplierResponseDto>.FailureResponse("Ya existe un proveedor con ese nombre de empresa.", statusCode: 409);
+                return ApiResponse<SupplierResponseDto>.FailureResponse("A supplier with that company name already exists.", statusCode: 409);
 
             var emailExists = await _context.Suppliers.AnyAsync(s => s.Email == email);
             if (emailExists)
-                return ApiResponse<SupplierResponseDto>.FailureResponse("Ya existe un proveedor con ese correo electrónico.", statusCode: 409);
+                return ApiResponse<SupplierResponseDto>.FailureResponse("A supplier with that email address already exists.", statusCode: 409);
 
             var supplier = new Supplier
             {
@@ -79,25 +79,25 @@ namespace InventorySystemCloud.Application.Services
             _context.Suppliers.Add(supplier);
             await _context.SaveChangesAsync();
 
-            return ApiResponse<SupplierResponseDto>.SuccessResponse(ToResponseDto(supplier), "Proveedor creado exitosamente.", statusCode: 201);
+            return ApiResponse<SupplierResponseDto>.SuccessResponse(ToResponseDto(supplier), "Supplier created successfully.", statusCode: 201);
         }
 
         public async Task<ApiResponse<SupplierResponseDto>> UpdateAsync(int id, UpdateSupplierDto request)
         {
             var supplier = await _context.Suppliers.FindAsync(id);
             if (supplier == null)
-                return ApiResponse<SupplierResponseDto>.FailureResponse("Proveedor no encontrado.", statusCode: 404);
+                return ApiResponse<SupplierResponseDto>.FailureResponse("Supplier not found.", statusCode: 404);
 
             var company = request.CompanyName.Trim();
             var email = request.Email.Trim().ToLowerInvariant();
 
             var companyConflict = await _context.Suppliers.AnyAsync(s => s.CompanyName.ToLower() == company.ToLower() && s.Id != id);
             if (companyConflict)
-                return ApiResponse<SupplierResponseDto>.FailureResponse("Ya existe otro proveedor con ese nombre de empresa.", statusCode: 409);
+                return ApiResponse<SupplierResponseDto>.FailureResponse("A supplier with that company name already exists.", statusCode: 409);
 
             var emailConflict = await _context.Suppliers.AnyAsync(s => s.Email == email && s.Id != id);
             if (emailConflict)
-                return ApiResponse<SupplierResponseDto>.FailureResponse("Ya existe otro proveedor con ese correo electrónico.", statusCode: 409);
+                return ApiResponse<SupplierResponseDto>.FailureResponse("A supplier with that email address already exists.", statusCode: 409);
 
             supplier.CompanyName = company;
             supplier.Email = email;
@@ -108,19 +108,19 @@ namespace InventorySystemCloud.Application.Services
 
             await _context.SaveChangesAsync();
 
-            return ApiResponse<SupplierResponseDto>.SuccessResponse(ToResponseDto(supplier), "Proveedor actualizado exitosamente.");
+            return ApiResponse<SupplierResponseDto>.SuccessResponse(ToResponseDto(supplier), "Supplier updated successfully.");
         }
 
         public async Task<ApiResponse<string>> DeleteAsync(int id)
         {
             var supplier = await _context.Suppliers.FindAsync(id);
             if (supplier == null)
-                return ApiResponse<string>.FailureResponse("Proveedor no encontrado.", statusCode: 404);
+                return ApiResponse<string>.FailureResponse("Supplier not found.", statusCode: 404);
 
             supplier.IsActive = false;
             await _context.SaveChangesAsync();
 
-            return ApiResponse<string>.SuccessResponse("Proveedor desactivado.", "Proveedor eliminado exitosamente.");
+            return ApiResponse<string>.SuccessResponse("Supplier deactivated.", "Supplier deleted successfully.");
         }
 
         private static SupplierResponseDto ToResponseDto(Supplier s) => new()

@@ -1,110 +1,81 @@
 using System;
-using System.Collections.Generic;
-using System.Net.Http;
-using System.Net.Http.Headers;
-using System.Text;
-using System.Text.Json;
-using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using InventorySystemCloud.Application.DTOs.Sales;
 using InventorySystemCloud.Application.Interfaces;
 using InventorySystemCloud.Application.Settings;
+using MailKit.Net.Smtp;
+using MailKit.Security;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using MimeKit;
 
 namespace InventorySystemCloud.Infrastructure.Services
 {
     public class EmailService : IEmailService
     {
-        private const string ResendApiUrl = "https://api.resend.com/emails";
         private readonly EmailSettings _settings;
         private readonly IEmailGenerator _emailGenerator;
-        private readonly HttpClient _httpClient;
         private readonly ILogger<EmailService> _logger;
 
         public EmailService(
             IOptions<EmailSettings> settings,
             IEmailGenerator emailGenerator,
-            HttpClient httpClient,
             ILogger<EmailService> logger)
         {
             _settings = settings.Value;
             _emailGenerator = emailGenerator;
-            _httpClient = httpClient;
             _logger = logger;
         }
 
         public async Task SendEmailAsync(
-            string toEmail, 
-            string subject, 
-            string htmlBody, 
-            byte[]? attachmentBytes = null, 
+            string toEmail,
+            string subject,
+            string htmlBody,
+            byte[]? attachmentBytes = null,
             string? attachmentFileName = null)
         {
             if (string.IsNullOrWhiteSpace(toEmail))
                 return;
 
-            // Simulation mode or missing API key
-            if (_settings.IsSimulationMode || string.IsNullOrWhiteSpace(_settings.ApiKey) || _settings.ApiKey.StartsWith("re_YOUR"))
+            // Simulation mode or missing credentials
+            if (_settings.IsSimulationMode ||
+                string.IsNullOrWhiteSpace(_settings.SmtpUser) ||
+                string.IsNullOrWhiteSpace(_settings.SmtpPassword))
             {
                 _logger.LogInformation(
-                    "[RESEND SIMULATION] Destinatario: {ToEmail} | Asunto: {Subject} | Adjunto: {Attachment}",
+                    "[EMAIL SIMULATION] Destinatario: {ToEmail} | Asunto: {Subject} | Adjunto: {Attachment}",
                     toEmail, subject, attachmentFileName ?? "Ninguno");
+                _logger.LogInformation("[EMAIL SIMULATION] Contenido HTML:\n{Html}", htmlBody);
                 return;
             }
 
             try
             {
-                var fromAddress = string.IsNullOrWhiteSpace(_settings.SenderName)
-                    ? _settings.SenderEmail
-                    : $"{_settings.SenderName} <{_settings.SenderEmail}>";
+                var message = new MimeMessage();
+                message.From.Add(new MailboxAddress(_settings.SenderName, _settings.SenderEmail));
+                message.To.Add(MailboxAddress.Parse(toEmail));
+                message.Subject = subject;
 
-                var payload = new ResendEmailPayload
-                {
-                    From = fromAddress,
-                    To = new List<string> { toEmail },
-                    Subject = subject,
-                    Html = htmlBody
-                };
+                var bodyBuilder = new BodyBuilder { HtmlBody = htmlBody };
 
                 if (attachmentBytes != null && !string.IsNullOrEmpty(attachmentFileName))
                 {
-                    payload.Attachments = new List<ResendAttachment>
-                    {
-                        new()
-                        {
-                            Filename = attachmentFileName,
-                            Content = Convert.ToBase64String(attachmentBytes)
-                        }
-                    };
+                    bodyBuilder.Attachments.Add(attachmentFileName, attachmentBytes, ContentType.Parse("application/pdf"));
                 }
 
-                var request = new HttpRequestMessage(HttpMethod.Post, ResendApiUrl);
-                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _settings.ApiKey);
+                message.Body = bodyBuilder.ToMessageBody();
 
-                var json = JsonSerializer.Serialize(payload, new JsonSerializerOptions
-                {
-                    DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
-                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-                });
+                using var client = new SmtpClient();
+                await client.ConnectAsync(_settings.SmtpHost, _settings.SmtpPort, SecureSocketOptions.StartTls);
+                await client.AuthenticateAsync(_settings.SmtpUser, _settings.SmtpPassword);
+                await client.SendAsync(message);
+                await client.DisconnectAsync(true);
 
-                request.Content = new StringContent(json, Encoding.UTF8, "application/json");
-
-                var response = await _httpClient.SendAsync(request);
-
-                if (response.IsSuccessStatusCode)
-                {
-                    _logger.LogInformation("[RESEND] Correo enviado exitosamente a {ToEmail} vía HTTPS API", toEmail);
-                }
-                else
-                {
-                    var errorBody = await response.Content.ReadAsStringAsync();
-                    _logger.LogWarning("[RESEND] Error en la API de Resend ({StatusCode}): {Body}", response.StatusCode, errorBody);
-                }
+                _logger.LogInformation("[EMAIL] Correo enviado exitosamente a {ToEmail} vía SMTP ({Host})", toEmail, _settings.SmtpHost);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "[RESEND] Excepción al enviar correo a {ToEmail}", toEmail);
+                _logger.LogError(ex, "[EMAIL] Error al enviar correo a {ToEmail}: {Message}", toEmail, ex.Message);
             }
         }
 
@@ -119,33 +90,6 @@ namespace InventorySystemCloud.Infrastructure.Services
             var html = _emailGenerator.GenerateInvoiceEmail(sale);
             var fileName = $"Factura_Venta_FAC-{sale.Id:D6}.pdf";
             await SendEmailAsync(toEmail, $"Tu Factura Digital FAC-{sale.Id:D6} - InventorySystem Cloud", html, pdfBytes, fileName);
-        }
-
-        private class ResendEmailPayload
-        {
-            [JsonPropertyName("from")]
-            public string From { get; set; } = string.Empty;
-
-            [JsonPropertyName("to")]
-            public List<string> To { get; set; } = new();
-
-            [JsonPropertyName("subject")]
-            public string Subject { get; set; } = string.Empty;
-
-            [JsonPropertyName("html")]
-            public string Html { get; set; } = string.Empty;
-
-            [JsonPropertyName("attachments")]
-            public List<ResendAttachment>? Attachments { get; set; }
-        }
-
-        private class ResendAttachment
-        {
-            [JsonPropertyName("filename")]
-            public string Filename { get; set; } = string.Empty;
-
-            [JsonPropertyName("content")]
-            public string Content { get; set; } = string.Empty;
         }
     }
 }

@@ -11,7 +11,7 @@ namespace InventorySystemCloud.Api.Controllers
 {
     [ApiController]
     [Route("purchases")]
-    [Authorize]
+    [Authorize (Roles = "Admin")]
     public class PurchasesController : ControllerBase
     {
         private readonly IPurchaseService _purchaseService;

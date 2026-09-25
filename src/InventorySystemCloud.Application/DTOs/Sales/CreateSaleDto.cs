@@ -5,22 +5,22 @@ namespace InventorySystemCloud.Application.DTOs.Sales
 {
     public class CreateSaleDto
     {
-        [Required(ErrorMessage = "El cliente es obligatorio.")]
+        [Required(ErrorMessage = "Client is required.")]
         public int ClientId { get; set; }
 
-        [Required(ErrorMessage = "El método de pago es obligatorio.")]
+        [Required(ErrorMessage = "Payment method is required.")]
         [MaxLength(50)]
         public string PaymentMethod { get; set; } = "Efectivo";
 
-        [Required(ErrorMessage = "El monto pagado es obligatorio.")]
-        [Range(0.01, 10_000_000, ErrorMessage = "El monto pagado debe ser mayor a 0.")]
+        [Required(ErrorMessage = "Amount paid is required.")]
+        [Range(0.01, 10_000_000, ErrorMessage = "Amount paid must be greater than 0.")]
         public decimal AmountPaid { get; set; }
 
         [MaxLength(10)]
         public string Currency { get; set; } = "COP";
 
-        [Required(ErrorMessage = "La venta debe contener al menos un producto.")]
-        [MinLength(1, ErrorMessage = "La venta debe contener al menos un producto.")]
+        [Required(ErrorMessage = "Sale must contain at least one product.")]
+        [MinLength(1, ErrorMessage = "Sale must contain at least one product.")]
         public List<CreateSaleItemDto> Items { get; set; } = new();
     }
 }

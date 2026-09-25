@@ -32,20 +32,20 @@ namespace InventorySystemCloud.Application.Services
         public async Task<ApiResponse<SaleResponseDto>> CreateSaleAsync(CreateSaleDto request, Guid userPublicId)
         {
             if (request.Items == null || request.Items.Count == 0)
-                return ApiResponse<SaleResponseDto>.FailureResponse("La venta debe contener al menos un producto.", statusCode: 400);
+                return ApiResponse<SaleResponseDto>.FailureResponse("The sale must contain at least one product.", statusCode: 400);
 
             // 1. Validate User
             var user = await _context.Users.FirstOrDefaultAsync(u => u.PublicId == userPublicId);
             if (user == null || !user.IsActive)
-                return ApiResponse<SaleResponseDto>.FailureResponse("Usuario no autorizado o inactivo.", statusCode: 401);
+                return ApiResponse<SaleResponseDto>.FailureResponse("Unauthorized or inactive user.", statusCode: 401);
 
             // 2. Validate Client
             var client = await _context.Clients.FindAsync(request.ClientId);
             if (client == null)
-                return ApiResponse<SaleResponseDto>.FailureResponse("El cliente especificado no existe.", statusCode: 404);
+                return ApiResponse<SaleResponseDto>.FailureResponse("The specified client does not exist.", statusCode: 404);
 
             if (!client.IsActive)
-                return ApiResponse<SaleResponseDto>.FailureResponse("El cliente especificado se encuentra inactivo.", statusCode: 400);
+                return ApiResponse<SaleResponseDto>.FailureResponse("The specified client is inactive.", statusCode: 400);
 
             // 3. Validate & Process Products / Stock
             var productIds = request.Items.Select(i => i.ProductId).Distinct().ToList();
@@ -59,16 +59,16 @@ namespace InventorySystemCloud.Application.Services
             foreach (var item in request.Items)
             {
                 if (item.Quantity <= 0)
-                    return ApiResponse<SaleResponseDto>.FailureResponse($"La cantidad para el producto ID {item.ProductId} debe ser mayor a cero.", statusCode: 400);
+                    return ApiResponse<SaleResponseDto>.FailureResponse($"The quantity for product ID {item.ProductId} must be greater than zero.", statusCode: 400);
 
                 if (!products.TryGetValue(item.ProductId, out var product))
-                    return ApiResponse<SaleResponseDto>.FailureResponse($"El producto con ID {item.ProductId} no fue encontrado.", statusCode: 404);
+                    return ApiResponse<SaleResponseDto>.FailureResponse($"The product with ID {item.ProductId} was not found.", statusCode: 404);
 
                 if (!product.IsActive)
-                    return ApiResponse<SaleResponseDto>.FailureResponse($"El producto '{product.Name}' no está activo para la venta.", statusCode: 400);
+                    return ApiResponse<SaleResponseDto>.FailureResponse($"The product '{product.Name}' is not active for sale.", statusCode: 400);
 
                 if (product.Quantity < item.Quantity)
-                    return ApiResponse<SaleResponseDto>.FailureResponse($"Stock insuficiente para '{product.Name}'. Stock disponible: {product.Quantity}, Solicitado: {item.Quantity}.", statusCode: 400);
+                    return ApiResponse<SaleResponseDto>.FailureResponse($"Insufficient stock for '{product.Name}'. Available stock: {product.Quantity}, Requested: {item.Quantity}.", statusCode: 400);
 
                 // Deduct stock
                 product.Quantity -= item.Quantity;
@@ -89,7 +89,7 @@ namespace InventorySystemCloud.Application.Services
             if (request.AmountPaid < calculatedTotal)
             {
                 return ApiResponse<SaleResponseDto>.FailureResponse(
-                    $"El monto pagado ({request.AmountPaid:N2}) es menor que el total de la venta ({calculatedTotal:N2}).", statusCode: 400);
+                    $"The amount paid ({request.AmountPaid:N2}) is less than the total of the sale ({calculatedTotal:N2}).", statusCode: 400);
             }
 
             var changeDue = request.AmountPaid - calculatedTotal;
@@ -115,7 +115,7 @@ namespace InventorySystemCloud.Application.Services
             await _auditService.LogActionAsync(
                 user.Id,
                 "CREATE_SALE",
-                $"Venta #{sale.Id} registrada para cliente {client.FullName} ({client.DocumentNumber}) por total de {sale.TotalAmount:C2} {sale.Currency}");
+                $"Sale #{sale.Id} registered for client {client.FullName} ({client.DocumentNumber}) for a total of {sale.TotalAmount:C2} {sale.Currency}");
 
             var responseDto = MapToResponseDto(sale, client, user);
 
@@ -133,7 +133,7 @@ namespace InventorySystemCloud.Application.Services
                 }
             }
 
-            return ApiResponse<SaleResponseDto>.SuccessResponse(responseDto, "Venta registrada exitosamente.", statusCode: 201);
+            return ApiResponse<SaleResponseDto>.SuccessResponse(responseDto, "Sale registered successfully.", statusCode: 201);
         }
 
         public async Task<ApiResponse<IEnumerable<SaleResponseDto>>> GetAllAsync(DateTime? startDate = null, DateTime? endDate = null, int? clientId = null)
@@ -172,7 +172,7 @@ namespace InventorySystemCloud.Application.Services
                 .FirstOrDefaultAsync(s => s.Id == id);
 
             if (sale == null)
-                return ApiResponse<SaleResponseDto>.FailureResponse("Venta no encontrada.", statusCode: 404);
+                return ApiResponse<SaleResponseDto>.FailureResponse("Sale not found.", statusCode: 404);
 
             return ApiResponse<SaleResponseDto>.SuccessResponse(MapToResponseDto(sale, sale.Client, sale.CreatedBy));
         }
@@ -186,11 +186,11 @@ namespace InventorySystemCloud.Application.Services
             try
             {
                 var pdfBytes = _pdfInvoiceGenerator.GenerateInvoicePdf(saleResult.Data);
-                return ApiResponse<byte[]>.SuccessResponse(pdfBytes, "Factura generada exitosamente.");
+                return ApiResponse<byte[]>.SuccessResponse(pdfBytes, "Invoice generated successfully.");
             }
             catch (Exception ex)
             {
-                return ApiResponse<byte[]>.FailureResponse($"Error al generar la factura digital: {ex.Message}", statusCode: 500);
+                return ApiResponse<byte[]>.FailureResponse($"Error generating the digital invoice: {ex.Message}", statusCode: 500);
             }
         }
 
@@ -204,10 +204,10 @@ namespace InventorySystemCloud.Application.Services
                 .FirstOrDefaultAsync(s => s.Id == saleId);
 
             if (sale == null)
-                return ApiResponse<string>.FailureResponse("Venta no encontrada.", statusCode: 404);
+                return ApiResponse<string>.FailureResponse("Sale not found.", statusCode: 404);
 
             if (sale.Client == null || string.IsNullOrWhiteSpace(sale.Client.Email))
-                return ApiResponse<string>.FailureResponse("El cliente de esta venta no tiene un correo electrónico registrado.", statusCode: 400);
+                return ApiResponse<string>.FailureResponse("The client of this sale does not have an email address registered.", statusCode: 400);
 
             try
             {
@@ -215,11 +215,11 @@ namespace InventorySystemCloud.Application.Services
                 var pdfBytes = _pdfInvoiceGenerator.GenerateInvoicePdf(saleDto);
                 await _emailService.SendInvoiceEmailAsync(sale.Client.Email, saleDto, pdfBytes);
 
-                return ApiResponse<string>.SuccessResponse("Factura enviada exitosamente al correo del cliente.");
+                return ApiResponse<string>.SuccessResponse("Invoice sent successfully to the client's email.");
             }
             catch (Exception ex)
             {
-                return ApiResponse<string>.FailureResponse($"Error al enviar correo con la factura: {ex.Message}", statusCode: 500);
+                return ApiResponse<string>.FailureResponse($"Error generating the digital invoice: {ex.Message}", statusCode: 500);
             }
         }
 
@@ -256,7 +256,7 @@ namespace InventorySystemCloud.Application.Services
             {
                 Id = s.Id,
                 ClientId = s.ClientId,
-                ClientName = client?.FullName ?? "Cliente General",
+                ClientName = client?.FullName ?? "General Client",
                 ClientDocument = client?.DocumentNumber ?? "N/A",
                 CreatedByUserId = s.CreatedByUserId,
                 CreatedByEmail = user?.Email,
@@ -270,7 +270,7 @@ namespace InventorySystemCloud.Application.Services
                 {
                     Id = sd.Id,
                     ProductId = sd.ProductId,
-                    ProductName = sd.Product?.Name ?? $"Producto #{sd.ProductId}",
+                    ProductName = sd.Product?.Name ?? $"Product #{sd.ProductId}",
                     Quantity = sd.Quantity,
                     UnitPrice = sd.UnitPrice,
                     TotalPrice = sd.TotalPrice

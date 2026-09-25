@@ -39,10 +39,18 @@ namespace InventorySystemCloud.Domain.Entities
 
         public DateTime? LockoutEnd { get; set; }
 
+        [MaxLength(500)]
+        public string? AvatarUrl { get; set; }
+
+        [MaxLength(200)]
+        public string? AvatarPublicId { get; set; }
+
         // Navigation
         public ICollection<Sale> Sales { get; set; } = new List<Sale>();
 
         public ICollection<AuditLog> AuditLogs { get; set; } = new List<AuditLog>();
+
+        public ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
 
         [NotMapped]
         public string RoleDisplay =>

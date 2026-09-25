@@ -1,12 +1,19 @@
 using System;
+using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using FluentAssertions;
+using InventorySystemCloud.Application.DTOs.Images;
 using InventorySystemCloud.Application.DTOs.Products;
+using InventorySystemCloud.Application.Interfaces;
 using InventorySystemCloud.Application.Services;
+using InventorySystemCloud.Application.Settings;
 using InventorySystemCloud.Domain.Entities;
 using InventorySystemCloud.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
+using Moq;
 using Xunit;
 
 namespace InventorySystemCloud.UnitTests.Services
@@ -22,6 +29,16 @@ namespace InventorySystemCloud.UnitTests.Services
             return new AppDbContext(options);
         }
 
+        private ProductService CreateService(
+            AppDbContext context,
+            Mock<IImageStorageService>? mockImageStorage = null,
+            CloudinarySettings? settings = null)
+        {
+            var imageStorage = mockImageStorage?.Object ?? new Mock<IImageStorageService>().Object;
+            var options = Options.Create(settings ?? new CloudinarySettings());
+            return new ProductService(context, imageStorage, options);
+        }
+
         [Fact]
         public async Task GetAllAsync_ReturnsOnlyActiveProducts_ByDefault()
         {
@@ -33,7 +50,7 @@ namespace InventorySystemCloud.UnitTests.Services
             );
             await context.SaveChangesAsync();
 
-            var service = new ProductService(context);
+            var service = CreateService(context);
 
             // Act
             var result = await service.GetAllAsync(includeInactive: false);
@@ -55,7 +72,7 @@ namespace InventorySystemCloud.UnitTests.Services
             );
             await context.SaveChangesAsync();
 
-            var service = new ProductService(context);
+            var service = CreateService(context);
 
             // Act
             var result = await service.GetAllAsync(includeInactive: true);
@@ -74,7 +91,7 @@ namespace InventorySystemCloud.UnitTests.Services
             context.Products.Add(product);
             await context.SaveChangesAsync();
 
-            var service = new ProductService(context);
+            var service = CreateService(context);
 
             // Act
             var result = await service.GetByIdAsync(product.Id);
@@ -90,7 +107,7 @@ namespace InventorySystemCloud.UnitTests.Services
         {
             // Arrange
             using var context = GetInMemoryDbContext();
-            var service = new ProductService(context);
+            var service = CreateService(context);
 
             // Act
             var result = await service.GetByIdAsync(999);
@@ -105,7 +122,7 @@ namespace InventorySystemCloud.UnitTests.Services
         {
             // Arrange
             using var context = GetInMemoryDbContext();
-            var service = new ProductService(context);
+            var service = CreateService(context);
 
             var request = new CreateProductDto
             {
@@ -137,7 +154,7 @@ namespace InventorySystemCloud.UnitTests.Services
             context.Products.Add(new Product { Name = "Producto Existente", Category = "A", Price = 10, Quantity = 5, IsActive = true, CreatedAt = DateTime.UtcNow });
             await context.SaveChangesAsync();
 
-            var service = new ProductService(context);
+            var service = CreateService(context);
             var request = new CreateProductDto { Name = "Producto Existente", Category = "A", Price = 20, Quantity = 1 };
 
             // Act
@@ -157,7 +174,7 @@ namespace InventorySystemCloud.UnitTests.Services
             context.Products.Add(product);
             await context.SaveChangesAsync();
 
-            var service = new ProductService(context);
+            var service = CreateService(context);
             var request = new UpdateProductDto { Name = "Actualizado", Category = "B", Price = 75, Quantity = 20, IsActive = true };
 
             // Act
@@ -175,7 +192,7 @@ namespace InventorySystemCloud.UnitTests.Services
         {
             // Arrange
             using var context = GetInMemoryDbContext();
-            var service = new ProductService(context);
+            var service = CreateService(context);
             var request = new UpdateProductDto { Name = "X", Category = "A", Price = 10, Quantity = 1 };
 
             // Act
@@ -195,7 +212,7 @@ namespace InventorySystemCloud.UnitTests.Services
             context.Products.Add(product);
             await context.SaveChangesAsync();
 
-            var service = new ProductService(context);
+            var service = CreateService(context);
 
             // Act
             var result = await service.DeleteAsync(product.Id);
@@ -212,7 +229,7 @@ namespace InventorySystemCloud.UnitTests.Services
         {
             // Arrange
             using var context = GetInMemoryDbContext();
-            var service = new ProductService(context);
+            var service = CreateService(context);
 
             // Act
             var result = await service.DeleteAsync(999);
@@ -220,6 +237,77 @@ namespace InventorySystemCloud.UnitTests.Services
             // Assert
             result.Success.Should().BeFalse();
             result.StatusCode.Should().Be(404);
+        }
+
+        [Fact]
+        public async Task UploadImageAsync_WithValidProduct_UploadsToCloudinaryAndUpdatesProduct()
+        {
+            // Arrange
+            using var context = GetInMemoryDbContext();
+            var product = new Product { Name = "Croissant", Category = "Panaderia", Price = 2.5m, Quantity = 20, IsActive = true, CreatedAt = DateTime.UtcNow };
+            context.Products.Add(product);
+            await context.SaveChangesAsync();
+
+            var mockStorage = new Mock<IImageStorageService>();
+            mockStorage
+                .Setup(s => s.UploadImageAsync(It.IsAny<Stream>(), "croissant.png", "inventory/products"))
+                .ReturnsAsync(ImageUploadResult.Succeeded("https://res.cloudinary.com/demo/image/upload/v1/croissant.png", "inventory/products/croissant_123"));
+
+            var service = CreateService(context, mockStorage);
+            using var dummyStream = new MemoryStream(Encoding.UTF8.GetBytes("dummy-image-bytes"));
+
+            // Act
+            var result = await service.UploadImageAsync(product.Id, dummyStream, "croissant.png");
+
+            // Assert
+            result.Success.Should().BeTrue();
+            result.Data.Should().NotBeNull();
+            result.Data!.ImageUrl.Should().Be("https://res.cloudinary.com/demo/image/upload/v1/croissant.png");
+            result.Data.ImagePublicId.Should().Be("inventory/products/croissant_123");
+
+            var updatedInDb = await context.Products.FindAsync(product.Id);
+            updatedInDb!.ImageUrl.Should().Be("https://res.cloudinary.com/demo/image/upload/v1/croissant.png");
+            updatedInDb.ImagePublicId.Should().Be("inventory/products/croissant_123");
+        }
+
+        [Fact]
+        public async Task DeleteImageAsync_WithExistingImage_DeletesFromStorageAndClearsProduct()
+        {
+            // Arrange
+            using var context = GetInMemoryDbContext();
+            var product = new Product
+            {
+                Name = "Croissant",
+                Category = "Panaderia",
+                Price = 2.5m,
+                Quantity = 20,
+                IsActive = true,
+                ImageUrl = "https://res.cloudinary.com/demo/image/upload/v1/croissant.png",
+                ImagePublicId = "inventory/products/croissant_123",
+                CreatedAt = DateTime.UtcNow
+            };
+            context.Products.Add(product);
+            await context.SaveChangesAsync();
+
+            var mockStorage = new Mock<IImageStorageService>();
+            mockStorage
+                .Setup(s => s.DeleteImageAsync("inventory/products/croissant_123"))
+                .ReturnsAsync(true);
+
+            var service = CreateService(context, mockStorage);
+
+            // Act
+            var result = await service.DeleteImageAsync(product.Id);
+
+            // Assert
+            result.Success.Should().BeTrue();
+            result.Data!.ImageUrl.Should().BeNull();
+            result.Data.ImagePublicId.Should().BeNull();
+
+            var updatedInDb = await context.Products.FindAsync(product.Id);
+            updatedInDb!.ImageUrl.Should().BeNull();
+            updatedInDb.ImagePublicId.Should().BeNull();
+            mockStorage.Verify(s => s.DeleteImageAsync("inventory/products/croissant_123"), Times.Once);
         }
     }
 }

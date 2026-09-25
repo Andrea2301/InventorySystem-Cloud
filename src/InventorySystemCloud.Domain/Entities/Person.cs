@@ -24,7 +24,6 @@ namespace InventorySystemCloud.Domain.Entities
         [MaxLength(200)]
         public string? Address { get; set; }
 
-        public DateTime? DateOfBirth { get; set; }
 
         [NotMapped]
         public string FullName => $"{FirstName} {LastName}";

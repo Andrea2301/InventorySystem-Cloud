@@ -8,7 +8,7 @@ namespace InventorySystemCloud.Api.Controllers
 {
     [ApiController]
     [Route("suppliers")]
-    [Authorize]
+    [Authorize (Roles = "Admin")]
     public class SuppliersController : ControllerBase
     {
         private readonly ISupplierService _supplierService;

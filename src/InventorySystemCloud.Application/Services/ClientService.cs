@@ -49,7 +49,7 @@ namespace InventorySystemCloud.Application.Services
         {
             var client = await _context.Clients.FindAsync(id);
             if (client == null)
-                return ApiResponse<ClientResponseDto>.FailureResponse("Cliente no encontrado.", statusCode: 404);
+                return ApiResponse<ClientResponseDto>.FailureResponse("Client not found.", statusCode: 404);
 
             return ApiResponse<ClientResponseDto>.SuccessResponse(ToResponseDto(client));
         }
@@ -57,12 +57,12 @@ namespace InventorySystemCloud.Application.Services
         public async Task<ApiResponse<ClientResponseDto>> GetByDocumentNumberAsync(string documentNumber)
         {
             if (string.IsNullOrWhiteSpace(documentNumber))
-                return ApiResponse<ClientResponseDto>.FailureResponse("El número de documento es obligatorio.", statusCode: 400);
+                return ApiResponse<ClientResponseDto>.FailureResponse("Document number is required.", statusCode: 400);
 
             var doc = documentNumber.Trim();
             var client = await _context.Clients.FirstOrDefaultAsync(c => c.DocumentNumber == doc);
             if (client == null)
-                return ApiResponse<ClientResponseDto>.FailureResponse("Cliente no encontrado.", statusCode: 404);
+                return ApiResponse<ClientResponseDto>.FailureResponse("Client not found.", statusCode: 404);
 
             return ApiResponse<ClientResponseDto>.SuccessResponse(ToResponseDto(client));
         }
@@ -86,7 +86,6 @@ namespace InventorySystemCloud.Application.Services
                 FirstName = request.FirstName.Trim(),
                 LastName = request.LastName.Trim(),
                 Address = request.Address?.Trim(),
-                DateOfBirth = request.DateOfBirth,
                 Email = email,
                 PhoneNumber = request.PhoneNumber.Trim(),
                 IsActive = true,
@@ -120,7 +119,6 @@ namespace InventorySystemCloud.Application.Services
             client.FirstName = request.FirstName.Trim();
             client.LastName = request.LastName.Trim();
             client.Address = request.Address?.Trim();
-            client.DateOfBirth = request.DateOfBirth;
             client.Email = email;
             client.PhoneNumber = request.PhoneNumber.Trim();
             client.IsActive = request.IsActive;
@@ -150,7 +148,6 @@ namespace InventorySystemCloud.Application.Services
             LastName = c.LastName,
             FullName = c.FullName,
             Address = c.Address,
-            DateOfBirth = c.DateOfBirth,
             Email = c.Email,
             PhoneNumber = c.PhoneNumber,
             IsActive = c.IsActive,

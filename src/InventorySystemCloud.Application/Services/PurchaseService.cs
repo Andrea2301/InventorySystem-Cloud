@@ -24,20 +24,20 @@ namespace InventorySystemCloud.Application.Services
         public async Task<ApiResponse<PurchaseResponseDto>> CreatePurchaseAsync(CreatePurchaseDto request, Guid userPublicId)
         {
             if (request.Items == null || request.Items.Count == 0)
-                return ApiResponse<PurchaseResponseDto>.FailureResponse("La orden de compra debe contener al menos un producto.", statusCode: 400);
+                return ApiResponse<PurchaseResponseDto>.FailureResponse("The purchase order must contain at least one product..", statusCode: 400);
 
             // 1. Validate User
             var user = await _context.Users.FirstOrDefaultAsync(u => u.PublicId == userPublicId);
             if (user == null || !user.IsActive)
-                return ApiResponse<PurchaseResponseDto>.FailureResponse("Usuario no autorizado o inactivo.", statusCode: 401);
+                return ApiResponse<PurchaseResponseDto>.FailureResponse("Unauthorized or inactive user.", statusCode: 401);
 
             // 2. Validate Supplier
             var supplier = await _context.Suppliers.FindAsync(request.SupplierId);
             if (supplier == null)
-                return ApiResponse<PurchaseResponseDto>.FailureResponse("El proveedor especificado no existe.", statusCode: 404);
+                return ApiResponse<PurchaseResponseDto>.FailureResponse("The specified supplier does not exist.", statusCode: 404);
 
             if (!supplier.IsActive)
-                return ApiResponse<PurchaseResponseDto>.FailureResponse("El proveedor especificado se encuentra inactivo.", statusCode: 400);
+                return ApiResponse<PurchaseResponseDto>.FailureResponse("The specified supplier is inactive.", statusCode: 400);
 
             // 3. Validate & Process Products / Stock
             var productIds = request.Items.Select(i => i.ProductId).Distinct().ToList();
@@ -51,16 +51,16 @@ namespace InventorySystemCloud.Application.Services
             foreach (var item in request.Items)
             {
                 if (item.Quantity <= 0)
-                    return ApiResponse<PurchaseResponseDto>.FailureResponse($"La cantidad para el producto ID {item.ProductId} debe ser mayor a cero.", statusCode: 400);
+                    return ApiResponse<PurchaseResponseDto>.FailureResponse($"The quantity for product ID {item.ProductId} must be greater than zero.", statusCode: 400);
 
                 if (item.UnitPrice < 0)
-                    return ApiResponse<PurchaseResponseDto>.FailureResponse($"El costo unitario para el producto ID {item.ProductId} no puede ser negativo.", statusCode: 400);
+                    return ApiResponse<PurchaseResponseDto>.FailureResponse($"The unit price for product ID {item.ProductId} cannot be negative.", statusCode: 400);
 
                 if (!products.TryGetValue(item.ProductId, out var product))
-                    return ApiResponse<PurchaseResponseDto>.FailureResponse($"El producto con ID {item.ProductId} no fue encontrado.", statusCode: 404);
+                    return ApiResponse<PurchaseResponseDto>.FailureResponse($"The product with ID {item.ProductId} was not found.", statusCode: 404);
 
                 if (!product.IsActive)
-                    return ApiResponse<PurchaseResponseDto>.FailureResponse($"El producto '{product.Name}' no está activo en el catálogo.", statusCode: 400);
+                    return ApiResponse<PurchaseResponseDto>.FailureResponse($"The product '{product.Name}' is not active in the catalog.", statusCode: 400);
 
                 // Increment stock
                 product.Quantity += item.Quantity;
@@ -97,10 +97,10 @@ namespace InventorySystemCloud.Application.Services
             await _auditService.LogActionAsync(
                 user.Id,
                 "CREATE_PURCHASE",
-                $"Compra #{purchase.Id} registrada para proveedor {supplier.CompanyName} por total de {purchase.TotalAmount:C2} {purchase.Currency}");
+                $"Purchase #{purchase.Id} registered for supplier {supplier.CompanyName} for a total of {purchase.TotalAmount:C2} {purchase.Currency}");
 
             var responseDto = MapToResponseDto(purchase, supplier, user);
-            return ApiResponse<PurchaseResponseDto>.SuccessResponse(responseDto, "Compra registrada y stock actualizado exitosamente.", statusCode: 201);
+            return ApiResponse<PurchaseResponseDto>.SuccessResponse(responseDto, "Purchase registered and stock updated successfully.", statusCode: 201);
         }
 
         public async Task<ApiResponse<IEnumerable<PurchaseResponseDto>>> GetAllAsync(DateTime? startDate = null, DateTime? endDate = null, int? supplierId = null)
@@ -139,7 +139,7 @@ namespace InventorySystemCloud.Application.Services
                 .FirstOrDefaultAsync(p => p.Id == id);
 
             if (purchase == null)
-                return ApiResponse<PurchaseResponseDto>.FailureResponse("Compra no encontrada.", statusCode: 404);
+                return ApiResponse<PurchaseResponseDto>.FailureResponse("Purchase not found.", statusCode: 404);
 
             return ApiResponse<PurchaseResponseDto>.SuccessResponse(MapToResponseDto(purchase, purchase.Supplier, purchase.CreatedBy));
         }
@@ -177,7 +177,7 @@ namespace InventorySystemCloud.Application.Services
             {
                 Id = p.Id,
                 SupplierId = p.SupplierId,
-                SupplierName = supplier?.CompanyName ?? "Proveedor General",
+                SupplierName = supplier?.CompanyName ?? "General Supplier",
                 SupplierEmail = supplier?.Email ?? "N/A",
                 CreatedByUserId = p.CreatedByUserId,
                 CreatedByEmail = user?.Email,
@@ -190,7 +190,7 @@ namespace InventorySystemCloud.Application.Services
                 {
                     Id = pd.Id,
                     ProductId = pd.ProductId,
-                    ProductName = pd.Product?.Name ?? $"Producto #{pd.ProductId}",
+                    ProductName = pd.Product?.Name ?? $"Product #{pd.ProductId}",
                     Quantity = pd.Quantity,
                     UnitPrice = pd.UnitPrice,
                     TotalPrice = pd.TotalPrice

@@ -16,6 +16,7 @@ namespace InventorySystemCloud.Application.Interfaces
         DbSet<Supplier> Suppliers { get; }
         DbSet<Purchase> Purchases { get; }
         DbSet<PurchaseDetail> PurchaseDetails { get; }
+        DbSet<RefreshToken> RefreshTokens { get; }
 
         Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
     }

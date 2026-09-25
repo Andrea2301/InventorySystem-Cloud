@@ -12,5 +12,7 @@ namespace InventorySystemCloud.Application.Interfaces
         Task<ApiResponse<ProductResponseDto>> CreateAsync(CreateProductDto request);
         Task<ApiResponse<ProductResponseDto>> UpdateAsync(int id, UpdateProductDto request);
         Task<ApiResponse<string>> DeleteAsync(int id);
+        Task<ApiResponse<ProductResponseDto>> UploadImageAsync(int id, System.IO.Stream fileStream, string fileName);
+        Task<ApiResponse<ProductResponseDto>> DeleteImageAsync(int id);
     }
 }

@@ -2,8 +2,11 @@ namespace InventorySystemCloud.Application.Settings
 {
     public class EmailSettings
     {
-        public string ApiKey { get; set; } = string.Empty;
-        public string SenderEmail { get; set; } = "onboarding@resend.dev";
+        public string SmtpHost { get; set; } = "smtp.gmail.com";
+        public int SmtpPort { get; set; } = 587;
+        public string SmtpUser { get; set; } = string.Empty;
+        public string SmtpPassword { get; set; } = string.Empty;
+        public string SenderEmail { get; set; } = string.Empty;
         public string SenderName { get; set; } = "InventorySystem Cloud";
         public bool IsSimulationMode { get; set; } = true;
     }

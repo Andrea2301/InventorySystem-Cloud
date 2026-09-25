@@ -39,10 +39,16 @@ namespace InventorySystemCloud.Domain.Entities
 
         public string? ImagePath { get; set; }
 
+        [MaxLength(500)]
+        public string? ImageUrl { get; set; }
+
+        [MaxLength(200)]
+        public string? ImagePublicId { get; set; }
+
         [NotMapped]
-        public string? ImageSourceUri => string.IsNullOrEmpty(ImagePath)
-            ? null
-            : System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, ImagePath);
+        public string? ImageSourceUri => !string.IsNullOrEmpty(ImageUrl)
+            ? ImageUrl
+            : (string.IsNullOrEmpty(ImagePath) ? null : System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, ImagePath));
 
         [NotMapped]
         public string Status => IsActive ? (Quantity > 0 ? "In Stock" : "Out of Stock") : "Inactive";

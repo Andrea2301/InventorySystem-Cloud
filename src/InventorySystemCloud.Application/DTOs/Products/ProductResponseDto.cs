@@ -13,6 +13,8 @@ namespace InventorySystemCloud.Application.DTOs.Products
         public bool IsActive { get; set; }
         public string Status { get; set; } = string.Empty;
         public string? ImagePath { get; set; }
+        public string? ImageUrl { get; set; }
+        public string? ImagePublicId { get; set; }
         public DateTime CreatedAt { get; set; }
     }
 }

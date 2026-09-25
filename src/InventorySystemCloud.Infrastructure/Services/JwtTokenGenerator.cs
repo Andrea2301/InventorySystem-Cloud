@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 using InventorySystemCloud.Application.DTOs.Auth;
 using InventorySystemCloud.Application.Interfaces;
@@ -40,6 +41,22 @@ namespace InventorySystemCloud.Infrastructure.Services
                 signingCredentials: credentials);
 
             return new GeneratedToken { Value = new JwtSecurityTokenHandler().WriteToken(token), ExpiresAt = expiresAt };
+        }
+
+        public RefreshToken GenerateRefreshToken(int userId, string? ipAddress = null)
+        {
+            var randomBytes = new byte[64];
+            using var rng = RandomNumberGenerator.Create();
+            rng.GetBytes(randomBytes);
+
+            return new RefreshToken
+            {
+                Token = Convert.ToBase64String(randomBytes),
+                UserId = userId,
+                ExpiresAt = DateTime.UtcNow.AddDays(_settings.RefreshTokenExpirationDays > 0 ? _settings.RefreshTokenExpirationDays : 7),
+                CreatedAt = DateTime.UtcNow,
+                CreatedByIp = ipAddress
+            };
         }
     }
 }
