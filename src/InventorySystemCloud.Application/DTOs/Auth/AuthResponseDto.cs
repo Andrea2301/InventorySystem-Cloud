@@ -11,5 +11,6 @@ namespace InventorySystemCloud.Application.DTOs.Auth
         public string Role { get; set; } = string.Empty;
         public string? AvatarUrl { get; set; }
         public DateTime ExpiresAt { get; set; }
+        public List<string> Permissions { get; set; } = new();
     }
 }

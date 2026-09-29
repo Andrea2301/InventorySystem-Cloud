@@ -17,6 +17,7 @@ namespace InventorySystemCloud.Application.Interfaces
         DbSet<Purchase> Purchases { get; }
         DbSet<PurchaseDetail> PurchaseDetails { get; }
         DbSet<RefreshToken> RefreshTokens { get; }
+        DbSet<UserPermission> UserPermissions { get; }
 
         Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
     }

@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using System.Text;
 using System.Threading.RateLimiting;
+using InventorySystemCloud.Api.Authorization;
 using InventorySystemCloud.Api.Middleware;
 using InventorySystemCloud.Application.Interfaces;
 using InventorySystemCloud.Application.Services;
@@ -8,6 +9,7 @@ using InventorySystemCloud.Application.Settings;
 using InventorySystemCloud.Infrastructure.Data;
 using InventorySystemCloud.Infrastructure.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
@@ -67,6 +69,10 @@ builder.Services.AddScoped<IAuditService, AuditService>();
 builder.Services.AddScoped<ISaleService, SaleService>();
 builder.Services.AddScoped<IPurchaseService, PurchaseService>();
 builder.Services.AddScoped<IReportService, ReportService>();
+builder.Services.AddScoped<IUserService, UserService>();
+
+builder.Services.AddSingleton<IAuthorizationPolicyProvider, PermissionPolicyProvider>();
+builder.Services.AddScoped<IAuthorizationHandler, PermissionAuthorizationHandler>();
 
 builder.Services.AddRateLimiter(options =>
 {
@@ -78,6 +84,8 @@ builder.Services.AddRateLimiter(options =>
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(options =>
 {
+    // Preserve JWT claim names such as `sub`; token validation below reads that exact claim.
+    options.MapInboundClaims = false;
     options.RequireHttpsMetadata = true;
     options.TokenValidationParameters = new TokenValidationParameters
     {
@@ -122,13 +130,27 @@ using (var scope = app.Services.CreateScope())
         }
     }
 
-    // Seed initial admin user if not exists
+    // =========================================================================================
+    // [DEPLOYMENT - SEGURIDAD]: SEMBRADO DE USUARIOS INICIALES
+    // 1. Admin: Se crea con las credenciales de 'InitialAdmin:Email' e 'InitialAdmin:Password'
+    //    (o variables de entorno 'InitialAdmin__Email' e 'InitialAdmin__Password').
+    // 2. Cajero Demo: Solo se recomienda en modo desarrollo o para demos de portafolio.
+    //    En un despliegue de producción real, puedes comentar la línea de SeedDemoCashierAsync.
+    // =========================================================================================
     await DataSeeder.SeedInitialAdminAsync(db, app.Configuration, logger);
+
+    if (app.Environment.IsDevelopment() || app.Configuration.GetValue<bool>("EnableDemoSeeding", true))
+    {
+        await DataSeeder.SeedDemoCashierAsync(db, app.Configuration, logger);
+    }
 }
 
 app.UseMiddleware<GlobalExceptionHandlerMiddleware>();
 if (app.Environment.IsDevelopment()) { app.UseSwagger(); app.UseSwaggerUI(); }
 app.UseHttpsRedirection();
+
+// [DEPLOYMENT - SEGURIDAD]: CORS
+// En producción, asegúrate de restringir los orígenes permitidos al dominio real de tu frontend
 app.UseCors("FrontendDevelopment");
 app.UseRateLimiter();
 app.UseAuthentication();

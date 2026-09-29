@@ -1,6 +1,8 @@
 using System;
 using System.Threading.Tasks;
+using InventorySystemCloud.Api.Authorization;
 using InventorySystemCloud.Application.Interfaces;
+using InventorySystemCloud.Domain.Constants;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -8,7 +10,7 @@ namespace InventorySystemCloud.Api.Controllers
 {
     [ApiController]
     [Route("reports")]
-    [Authorize(Roles = "Admin")]
+    [Authorize]
     public class ReportsController : ControllerBase
     {
         private readonly IReportService _reportService;
@@ -22,6 +24,7 @@ namespace InventorySystemCloud.Api.Controllers
         /// Genera y descarga el reporte de productos e inventario en formato Excel (.xlsx).
         /// </summary>
         [HttpGet("products/excel")]
+        [HasPermission(AppPermissions.Reports.Products)]
         public async Task<IActionResult> ExportProductsExcel()
         {
             var fileBytes = await _reportService.GenerateProductsExcelReportAsync();
@@ -33,6 +36,7 @@ namespace InventorySystemCloud.Api.Controllers
         /// Genera y descarga el reporte de productos e inventario en formato CSV con soporte UTF-8.
         /// </summary>
         [HttpGet("products/csv")]
+        [HasPermission(AppPermissions.Reports.Products)]
         public async Task<IActionResult> ExportProductsCsv()
         {
             var fileBytes = await _reportService.GenerateProductsCsvReportAsync();
@@ -44,6 +48,7 @@ namespace InventorySystemCloud.Api.Controllers
         /// Genera y descarga el reporte consolidado de ventas en formato Excel (.xlsx).
         /// </summary>
         [HttpGet("sales/excel")]
+        [HasPermission(AppPermissions.Reports.Sales)]
         public async Task<IActionResult> ExportSalesExcel([FromQuery] DateTime? startDate, [FromQuery] DateTime? endDate)
         {
             var fileBytes = await _reportService.GenerateSalesReportAsync(startDate, endDate);
@@ -55,6 +60,7 @@ namespace InventorySystemCloud.Api.Controllers
         /// Genera y descarga el reporte consolidado de compras en formato Excel (.xlsx).
         /// </summary>
         [HttpGet("purchases/excel")]
+        [HasPermission(AppPermissions.Reports.Purchases)]
         public async Task<IActionResult> ExportPurchasesExcel([FromQuery] DateTime? startDate, [FromQuery] DateTime? endDate)
         {
             var fileBytes = await _reportService.GeneratePurchasesReportAsync(startDate, endDate);
@@ -63,10 +69,10 @@ namespace InventorySystemCloud.Api.Controllers
         }
 
         /// <summary>
-        /// Genera y descarga el reporte de logs de auditoría en formato Excel (.xlsx) - Solo Administradores.
+        /// Genera y descarga el reporte de logs de auditoría en formato Excel (.xlsx).
         /// </summary>
         [HttpGet("audit/excel")]
-        [Authorize(Roles = "Admin")]
+        [HasPermission(AppPermissions.Reports.Audit)]
         public async Task<IActionResult> ExportAuditExcel([FromQuery] DateTime? startDate, [FromQuery] DateTime? endDate)
         {
             var fileBytes = await _reportService.GenerateAuditLogsReportAsync(startDate, endDate);

@@ -1,6 +1,8 @@
 using System.Threading.Tasks;
+using InventorySystemCloud.Api.Authorization;
 using InventorySystemCloud.Application.DTOs.Clients;
 using InventorySystemCloud.Application.Interfaces;
+using InventorySystemCloud.Domain.Constants;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -19,6 +21,7 @@ namespace InventorySystemCloud.Api.Controllers
         }
 
         [HttpGet]
+        [HasPermission(AppPermissions.Clients.View)]
         public async Task<IActionResult> GetAll([FromQuery] bool includeInactive = false, [FromQuery] string? search = null)
         {
             if (includeInactive && !User.IsInRole("Admin"))
@@ -29,6 +32,7 @@ namespace InventorySystemCloud.Api.Controllers
         }
 
         [HttpGet("{id:int}")]
+        [HasPermission(AppPermissions.Clients.View)]
         public async Task<IActionResult> GetById(int id)
         {
             var result = await _clientService.GetByIdAsync(id);
@@ -36,6 +40,7 @@ namespace InventorySystemCloud.Api.Controllers
         }
 
         [HttpGet("by-document/{documentNumber}")]
+        [HasPermission(AppPermissions.Clients.View)]
         public async Task<IActionResult> GetByDocumentNumber(string documentNumber)
         {
             var result = await _clientService.GetByDocumentNumberAsync(documentNumber);
@@ -43,6 +48,7 @@ namespace InventorySystemCloud.Api.Controllers
         }
 
         [HttpPost]
+        [HasPermission(AppPermissions.Clients.Create)]
         public async Task<IActionResult> Create([FromBody] CreateClientDto request)
         {
             var result = await _clientService.CreateAsync(request);
@@ -50,6 +56,7 @@ namespace InventorySystemCloud.Api.Controllers
         }
 
         [HttpPut("{id:int}")]
+        [HasPermission(AppPermissions.Clients.Edit)]
         public async Task<IActionResult> Update(int id, [FromBody] UpdateClientDto request)
         {
             var result = await _clientService.UpdateAsync(id, request);
@@ -57,7 +64,7 @@ namespace InventorySystemCloud.Api.Controllers
         }
 
         [HttpDelete("{id:int}")]
-        [Authorize(Roles = "Admin")]
+        [HasPermission(AppPermissions.Clients.Delete)]
         public async Task<IActionResult> Delete(int id)
         {
             var result = await _clientService.DeleteAsync(id);

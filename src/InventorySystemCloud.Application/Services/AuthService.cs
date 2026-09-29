@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using InventorySystemCloud.Application.DTOs.Auth;
 using InventorySystemCloud.Application.Interfaces;
 using InventorySystemCloud.Application.Settings;
+using InventorySystemCloud.Domain.Constants;
 using InventorySystemCloud.Domain.Entities;
 using InventorySystemCloud.Shared;
 using Microsoft.EntityFrameworkCore;
@@ -83,7 +84,9 @@ namespace InventorySystemCloud.Application.Services
                 return ApiResponse<AuthResponseDto>.FailureResponse("Email and password are required.", statusCode: 401);
 
             var email = NormalizeEmail(request.Email);
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
+            var user = await _context.Users
+                .Include(u => u.Permissions)
+                .FirstOrDefaultAsync(u => u.Email == email);
             var passwordIsValid = BCrypt.Net.BCrypt.Verify(request.Password, user?.PasswordHash ?? DummyPasswordHash);
 
             if (user == null || !passwordIsValid)
@@ -123,6 +126,7 @@ namespace InventorySystemCloud.Application.Services
 
             var refreshToken = await _context.RefreshTokens
                 .Include(rt => rt.User)
+                    .ThenInclude(u => u!.Permissions)
                 .FirstOrDefaultAsync(rt => rt.Token == request.RefreshToken);
 
             if (refreshToken == null)
@@ -286,7 +290,10 @@ namespace InventorySystemCloud.Application.Services
                 Email = user.Email,
                 Role = user.Role.ToString(),
                 AvatarUrl = user.AvatarUrl,
-                ExpiresAt = token.ExpiresAt
+                ExpiresAt = token.ExpiresAt,
+                Permissions = user.Role == UserRole.Admin
+                    ? AppPermissions.All.ToList()
+                    : (user.Permissions?.Select(p => p.Permission).ToList() ?? new List<string>())
             };
         }
 

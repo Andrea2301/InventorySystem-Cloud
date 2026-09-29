@@ -32,6 +32,14 @@ namespace InventorySystemCloud.Infrastructure.Services
                 new Claim("security_stamp", user.SecurityStamp),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
             };
+
+            if (user.Permissions != null)
+            {
+                foreach (var perm in user.Permissions)
+                {
+                    claims.Add(new Claim("permission", perm.Permission));
+                }
+            }
             var token = new JwtSecurityToken(
                 issuer: _settings.Issuer,
                 audience: _settings.Audience,

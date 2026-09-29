@@ -16,6 +16,7 @@ namespace InventorySystemCloud.Infrastructure.Data
         public DbSet<Purchase> Purchases { get; set; } = null!;
         public DbSet<PurchaseDetail> PurchaseDetails { get; set; } = null!;
         public DbSet<RefreshToken> RefreshTokens { get; set; } = null!;
+        public DbSet<UserPermission> UserPermissions { get; set; } = null!;
 
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
         {
@@ -31,6 +32,10 @@ namespace InventorySystemCloud.Infrastructure.Data
 
             modelBuilder.Entity<User>()
                 .HasIndex(u => u.PublicId)
+                .IsUnique();
+
+            modelBuilder.Entity<UserPermission>()
+                .HasIndex(up => new { up.UserId, up.Permission })
                 .IsUnique();
 
             modelBuilder.Entity<Client>()

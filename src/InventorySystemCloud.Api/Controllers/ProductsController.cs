@@ -2,8 +2,10 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using InventorySystemCloud.Api.Authorization;
 using InventorySystemCloud.Application.DTOs.Products;
 using InventorySystemCloud.Application.Interfaces;
+using InventorySystemCloud.Domain.Constants;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -28,6 +30,7 @@ namespace InventorySystemCloud.Api.Controllers
         /// Returns all active products. Admins can also request inactive ones.
         /// </summary>
         [HttpGet]
+        [HasPermission(AppPermissions.Products.View)]
         public async Task<IActionResult> GetAll([FromQuery] bool includeInactive = false)
         {
             // Only Admins can see inactive products
@@ -39,6 +42,7 @@ namespace InventorySystemCloud.Api.Controllers
         }
 
         [HttpGet("{id:int}")]
+        [HasPermission(AppPermissions.Products.View)]
         public async Task<IActionResult> GetById(int id)
         {
             var result = await _productService.GetByIdAsync(id);
@@ -46,7 +50,7 @@ namespace InventorySystemCloud.Api.Controllers
         }
 
         [HttpPost]
-        [Authorize(Roles = "Admin")]
+        [HasPermission(AppPermissions.Products.Create)]
         public async Task<IActionResult> Create([FromBody] CreateProductDto request)
         {
             var result = await _productService.CreateAsync(request);
@@ -54,7 +58,7 @@ namespace InventorySystemCloud.Api.Controllers
         }
 
         [HttpPut("{id:int}")]
-        [Authorize(Roles = "Admin")]
+        [HasPermission(AppPermissions.Products.Edit)]
         public async Task<IActionResult> Update(int id, [FromBody] UpdateProductDto request)
         {
             var result = await _productService.UpdateAsync(id, request);
@@ -62,7 +66,7 @@ namespace InventorySystemCloud.Api.Controllers
         }
 
         [HttpDelete("{id:int}")]
-        [Authorize(Roles = "Admin")]
+        [HasPermission(AppPermissions.Products.Delete)]
         public async Task<IActionResult> Delete(int id)
         {
             var result = await _productService.DeleteAsync(id);
@@ -73,7 +77,7 @@ namespace InventorySystemCloud.Api.Controllers
         /// Uploads an image to Cloudinary and links it to the product.
         /// </summary>
         [HttpPost("{id:int}/image")]
-        [Authorize(Roles = "Admin")]
+        [HasPermission(AppPermissions.Products.Edit)]
         [Consumes("multipart/form-data")]
         public async Task<IActionResult> UploadImage(int id, IFormFile file)
         {
@@ -96,7 +100,7 @@ namespace InventorySystemCloud.Api.Controllers
         /// Deletes the product image from Cloudinary and removes the link from the product.
         /// </summary>
         [HttpDelete("{id:int}/image")]
-        [Authorize(Roles = "Admin")]
+        [HasPermission(AppPermissions.Products.Delete)]
         public async Task<IActionResult> DeleteImage(int id)
         {
             var result = await _productService.DeleteImageAsync(id);

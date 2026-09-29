@@ -2,8 +2,10 @@ using System;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Threading.Tasks;
+using InventorySystemCloud.Api.Authorization;
 using InventorySystemCloud.Application.DTOs.Purchases;
 using InventorySystemCloud.Application.Interfaces;
+using InventorySystemCloud.Domain.Constants;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -11,7 +13,7 @@ namespace InventorySystemCloud.Api.Controllers
 {
     [ApiController]
     [Route("purchases")]
-    [Authorize (Roles = "Admin")]
+    [Authorize]
     public class PurchasesController : ControllerBase
     {
         private readonly IPurchaseService _purchaseService;
@@ -22,6 +24,7 @@ namespace InventorySystemCloud.Api.Controllers
         }
 
         [HttpPost]
+        [HasPermission(AppPermissions.Purchases.Create)]
         public async Task<IActionResult> Create([FromBody] CreatePurchaseDto request)
         {
             var publicIdClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value 
@@ -35,6 +38,7 @@ namespace InventorySystemCloud.Api.Controllers
         }
 
         [HttpGet]
+        [HasPermission(AppPermissions.Purchases.View)]
         public async Task<IActionResult> GetAll(
             [FromQuery] DateTime? startDate = null,
             [FromQuery] DateTime? endDate = null,
@@ -45,6 +49,7 @@ namespace InventorySystemCloud.Api.Controllers
         }
 
         [HttpGet("{id:int}")]
+        [HasPermission(AppPermissions.Purchases.View)]
         public async Task<IActionResult> GetById(int id)
         {
             var result = await _purchaseService.GetByIdAsync(id);
@@ -52,6 +57,7 @@ namespace InventorySystemCloud.Api.Controllers
         }
 
         [HttpGet("reports/daily")]
+        [HasPermission(AppPermissions.Purchases.View)]
         public async Task<IActionResult> GetDailyReport([FromQuery] DateTime? date = null)
         {
             var result = await _purchaseService.GetDailyReportAsync(date);

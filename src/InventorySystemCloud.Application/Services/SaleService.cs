@@ -68,7 +68,7 @@ namespace InventorySystemCloud.Application.Services
                     return ApiResponse<SaleResponseDto>.FailureResponse($"The product '{product.Name}' is not active for sale.", statusCode: 400);
 
                 if (product.Quantity < item.Quantity)
-                    return ApiResponse<SaleResponseDto>.FailureResponse($"Insufficient stock for '{product.Name}'. Available stock: {product.Quantity}, Requested: {item.Quantity}.", statusCode: 400);
+                    return ApiResponse<SaleResponseDto>.FailureResponse($"Stock insuficiente para '{product.Name}'. Stock disponible: {product.Quantity}, Solicitado: {item.Quantity}.", statusCode: 400);
 
                 // Deduct stock
                 product.Quantity -= item.Quantity;
@@ -89,7 +89,7 @@ namespace InventorySystemCloud.Application.Services
             if (request.AmountPaid < calculatedTotal)
             {
                 return ApiResponse<SaleResponseDto>.FailureResponse(
-                    $"The amount paid ({request.AmountPaid:N2}) is less than the total of the sale ({calculatedTotal:N2}).", statusCode: 400);
+                    $"El monto pagado ({request.AmountPaid:N2}) es menor que el total de la venta ({calculatedTotal:N2}).", statusCode: 400);
             }
 
             var changeDue = request.AmountPaid - calculatedTotal;

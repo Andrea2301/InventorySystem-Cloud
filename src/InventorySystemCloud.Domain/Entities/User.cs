@@ -52,6 +52,8 @@ namespace InventorySystemCloud.Domain.Entities
 
         public ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
 
+        public ICollection<UserPermission> Permissions { get; set; } = new List<UserPermission>();
+
         [NotMapped]
         public string RoleDisplay =>
             Role == UserRole.Admin ? "Administrator" : "Cashier";

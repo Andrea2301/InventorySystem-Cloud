@@ -34,10 +34,10 @@ namespace InventorySystemCloud.Application.Services
             // 2. Validate Supplier
             var supplier = await _context.Suppliers.FindAsync(request.SupplierId);
             if (supplier == null)
-                return ApiResponse<PurchaseResponseDto>.FailureResponse("The specified supplier does not exist.", statusCode: 404);
+                return ApiResponse<PurchaseResponseDto>.FailureResponse("El proveedor especificado no existe.", statusCode: 404);
 
             if (!supplier.IsActive)
-                return ApiResponse<PurchaseResponseDto>.FailureResponse("The specified supplier is inactive.", statusCode: 400);
+                return ApiResponse<PurchaseResponseDto>.FailureResponse("El proveedor especificado se encuentra inactivo.", statusCode: 400);
 
             // 3. Validate & Process Products / Stock
             var productIds = request.Items.Select(i => i.ProductId).Distinct().ToList();
@@ -51,7 +51,7 @@ namespace InventorySystemCloud.Application.Services
             foreach (var item in request.Items)
             {
                 if (item.Quantity <= 0)
-                    return ApiResponse<PurchaseResponseDto>.FailureResponse($"The quantity for product ID {item.ProductId} must be greater than zero.", statusCode: 400);
+                    return ApiResponse<PurchaseResponseDto>.FailureResponse($"La cantidad para el producto con ID {item.ProductId} debe ser mayor a cero.", statusCode: 400);
 
                 if (item.UnitPrice < 0)
                     return ApiResponse<PurchaseResponseDto>.FailureResponse($"The unit price for product ID {item.ProductId} cannot be negative.", statusCode: 400);

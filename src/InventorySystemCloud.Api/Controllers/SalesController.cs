@@ -2,8 +2,10 @@ using System;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Threading.Tasks;
+using InventorySystemCloud.Api.Authorization;
 using InventorySystemCloud.Application.DTOs.Sales;
 using InventorySystemCloud.Application.Interfaces;
+using InventorySystemCloud.Domain.Constants;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -22,6 +24,7 @@ namespace InventorySystemCloud.Api.Controllers
         }
 
         [HttpPost]
+        [HasPermission(AppPermissions.Sales.Create)]
         public async Task<IActionResult> Create([FromBody] CreateSaleDto request)
         {
             var publicIdClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value 
@@ -35,6 +38,7 @@ namespace InventorySystemCloud.Api.Controllers
         }
 
         [HttpGet]
+        [HasPermission(AppPermissions.Sales.View)]
         public async Task<IActionResult> GetAll(
             [FromQuery] DateTime? startDate = null,
             [FromQuery] DateTime? endDate = null,
@@ -45,6 +49,7 @@ namespace InventorySystemCloud.Api.Controllers
         }
 
         [HttpGet("{id:int}")]
+        [HasPermission(AppPermissions.Sales.View)]
         public async Task<IActionResult> GetById(int id)
         {
             var result = await _saleService.GetByIdAsync(id);
@@ -52,6 +57,7 @@ namespace InventorySystemCloud.Api.Controllers
         }
 
         [HttpGet("{id:int}/invoice")]
+        [HasPermission(AppPermissions.Sales.Invoice)]
         public async Task<IActionResult> GetInvoice(int id)
         {
             var result = await _saleService.GetInvoicePdfAsync(id);
@@ -62,6 +68,7 @@ namespace InventorySystemCloud.Api.Controllers
         }
 
         [HttpPost("{id:int}/send-invoice")]
+        [HasPermission(AppPermissions.Sales.Invoice)]
         public async Task<IActionResult> SendInvoice(int id)
         {
             var result = await _saleService.SendInvoiceEmailAsync(id);
@@ -69,6 +76,7 @@ namespace InventorySystemCloud.Api.Controllers
         }
 
         [HttpGet("reports/daily")]
+        [HasPermission(AppPermissions.Sales.View)]
         public async Task<IActionResult> GetDailyReport([FromQuery] DateTime? date = null)
         {
             var result = await _saleService.GetDailyReportAsync(date);

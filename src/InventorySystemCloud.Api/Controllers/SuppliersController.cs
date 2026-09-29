@@ -1,6 +1,8 @@
 using System.Threading.Tasks;
+using InventorySystemCloud.Api.Authorization;
 using InventorySystemCloud.Application.DTOs.Suppliers;
 using InventorySystemCloud.Application.Interfaces;
+using InventorySystemCloud.Domain.Constants;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -8,7 +10,7 @@ namespace InventorySystemCloud.Api.Controllers
 {
     [ApiController]
     [Route("suppliers")]
-    [Authorize (Roles = "Admin")]
+    [Authorize]
     public class SuppliersController : ControllerBase
     {
         private readonly ISupplierService _supplierService;
@@ -19,6 +21,7 @@ namespace InventorySystemCloud.Api.Controllers
         }
 
         [HttpGet]
+        [HasPermission(AppPermissions.Suppliers.View)]
         public async Task<IActionResult> GetAll([FromQuery] bool includeInactive = false, [FromQuery] string? search = null)
         {
             if (includeInactive && !User.IsInRole("Admin"))
@@ -29,6 +32,7 @@ namespace InventorySystemCloud.Api.Controllers
         }
 
         [HttpGet("{id:int}")]
+        [HasPermission(AppPermissions.Suppliers.View)]
         public async Task<IActionResult> GetById(int id)
         {
             var result = await _supplierService.GetByIdAsync(id);
@@ -36,7 +40,7 @@ namespace InventorySystemCloud.Api.Controllers
         }
 
         [HttpPost]
-        [Authorize(Roles = "Admin")]
+        [HasPermission(AppPermissions.Suppliers.Create)]
         public async Task<IActionResult> Create([FromBody] CreateSupplierDto request)
         {
             var result = await _supplierService.CreateAsync(request);
@@ -44,7 +48,7 @@ namespace InventorySystemCloud.Api.Controllers
         }
 
         [HttpPut("{id:int}")]
-        [Authorize(Roles = "Admin")]
+        [HasPermission(AppPermissions.Suppliers.Edit)]
         public async Task<IActionResult> Update(int id, [FromBody] UpdateSupplierDto request)
         {
             var result = await _supplierService.UpdateAsync(id, request);
@@ -52,7 +56,7 @@ namespace InventorySystemCloud.Api.Controllers
         }
 
         [HttpDelete("{id:int}")]
-        [Authorize(Roles = "Admin")]
+        [HasPermission(AppPermissions.Suppliers.Delete)]
         public async Task<IActionResult> Delete(int id)
         {
             var result = await _supplierService.DeleteAsync(id);
