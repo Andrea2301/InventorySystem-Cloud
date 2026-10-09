@@ -5,15 +5,15 @@ namespace InventorySystemCloud.Application.DTOs.Clients
 {
     public class CreateClientDto
     {
-        [Required(ErrorMessage = "El número de documento es obligatorio.")]
+        [Required(ErrorMessage = "The document number is required.")]
         [MaxLength(20)]
         public string DocumentNumber { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "El nombre es obligatorio.")]
+        [Required(ErrorMessage = "The first name is required.")]
         [MaxLength(100)]
         public string FirstName { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "El apellido es obligatorio.")]
+        [Required(ErrorMessage = "The last name is required.")]
         [MaxLength(100)]
         public string LastName { get; set; } = string.Empty;
 
@@ -22,12 +22,12 @@ namespace InventorySystemCloud.Application.DTOs.Clients
 
         public DateTime? DateOfBirth { get; set; }
 
-        [Required(ErrorMessage = "El correo electrónico es obligatorio.")]
-        [EmailAddress(ErrorMessage = "El formato de correo no es válido.")]
+        [Required(ErrorMessage = "The email address is required.")]
+        [EmailAddress(ErrorMessage = "The email format is not valid.")]
         [MaxLength(150)]
         public string Email { get; set; } = string.Empty;
 
-        [Phone(ErrorMessage = "El formato de teléfono no es válido.")]
+        [Phone(ErrorMessage = "The phone number format is not valid.")]
         [MaxLength(20)]
         public string PhoneNumber { get; set; } = string.Empty;
     }

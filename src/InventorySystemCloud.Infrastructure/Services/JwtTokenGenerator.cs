@@ -28,7 +28,7 @@ namespace InventorySystemCloud.Infrastructure.Services
             {
                 new Claim(JwtRegisteredClaimNames.Sub, user.PublicId.ToString()),
                 new Claim(JwtRegisteredClaimNames.Email, user.Email),
-                new Claim(ClaimTypes.Role, user.Role.ToString()),
+                new Claim("role", user.Role.ToString()),
                 new Claim("security_stamp", user.SecurityStamp),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
             };

@@ -1,0 +1,32 @@
+services:
+  db:
+    image: mysql:8.0
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: Inventory
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  inventorysystemcloud.api:
+    image: ${DOCKER_REGISTRY-}inventorysystemcloudapi
+    build:
+      context: .
+      dockerfile: src/InventorySystemCloud.Api/Dockerfile
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy # espera que MySQL esté listo
+    environment:
+      ASPNETCORE_URLS: "http://+:8080"
+
+volumes:
+  mysql_data:

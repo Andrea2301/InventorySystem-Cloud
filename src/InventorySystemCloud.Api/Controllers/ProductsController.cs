@@ -18,7 +18,7 @@ namespace InventorySystemCloud.Api.Controllers
     public class ProductsController : ControllerBase
     {
         private readonly IProductService _productService;
-        private static readonly string[] AllowedImageExtensions = { ".jpg", ".jpeg", ".png", ".webp" };
+        private static readonly string[] AllowedImageExtensions = { ".jpg", ".jpeg", ".png", ".webp", ".gif", ".bmp", ".avif" };
         private const long MaxFileSizeInBytes = 5 * 1024 * 1024; // 5MB
 
         public ProductsController(IProductService productService)

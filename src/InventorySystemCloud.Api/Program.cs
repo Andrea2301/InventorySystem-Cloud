@@ -92,7 +92,8 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJw
         ValidateIssuer = true, ValidIssuer = issuer, ValidateAudience = true, ValidAudience = audience,
         ValidateLifetime = true, RequireExpirationTime = true, ClockSkew = TimeSpan.Zero,
         ValidateIssuerSigningKey = true, IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey)),
-        ValidAlgorithms = new[] { SecurityAlgorithms.HmacSha256 }
+        ValidAlgorithms = new[] { SecurityAlgorithms.HmacSha256 },
+        RoleClaimType = "role"  // Use short claim name instead of the default ClaimTypes.Role URI
     };
     options.Events = new JwtBearerEvents
     {
