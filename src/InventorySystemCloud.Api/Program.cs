@@ -38,7 +38,10 @@ builder.Services.Configure<CompanySettings>(builder.Configuration.GetSection("Co
 builder.Services.Configure<CloudinarySettings>(builder.Configuration.GetSection("CloudinarySettings"));
 builder.Services.AddControllers();
 builder.Services.AddCors(options => options.AddPolicy("FrontendDevelopment", policy =>
-    policy.WithOrigins("http://localhost:4200", "https://localhost:4200").AllowAnyHeader().AllowAnyMethod()));
+    policy.WithOrigins("http://localhost:4200", "https://localhost:4200")
+          .AllowAnyHeader()
+          .AllowAnyMethod()));
+
 builder.Services.Configure<ApiBehaviorOptions>(options =>
     options.InvalidModelStateResponseFactory = _ => new BadRequestObjectResult(new { success = false, message = "The request is invalid." }));
 builder.Services.AddEndpointsApiExplorer();
@@ -141,8 +144,15 @@ using (var scope = app.Services.CreateScope())
 }
 
 app.UseMiddleware<GlobalExceptionHandlerMiddleware>();
-if (app.Environment.IsDevelopment()) { app.UseSwagger(); app.UseSwaggerUI(); }
+app.UseSwagger();
+app.UseSwaggerUI(c =>
+{
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "InventorySystemCloud API v1");
+    c.RoutePrefix = string.Empty; //  This makes Swagger the home page (root)
+});
+
 app.UseHttpsRedirection();
+
 
 
 app.UseCors("FrontendDevelopment");
