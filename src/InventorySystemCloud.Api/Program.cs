@@ -38,7 +38,10 @@ builder.Services.Configure<CompanySettings>(builder.Configuration.GetSection("Co
 builder.Services.Configure<CloudinarySettings>(builder.Configuration.GetSection("CloudinarySettings"));
 builder.Services.AddControllers();
 builder.Services.AddCors(options => options.AddPolicy("FrontendDevelopment", policy =>
-    policy.WithOrigins("http://localhost:4200", "https://localhost:4200").AllowAnyHeader().AllowAnyMethod()));
+    policy.WithOrigins("http://localhost:4200", "https://localhost:4200")
+          .AllowAnyHeader()
+          .AllowAnyMethod()));
+
 builder.Services.Configure<ApiBehaviorOptions>(options =>
     options.InvalidModelStateResponseFactory = _ => new BadRequestObjectResult(new { success = false, message = "The request is invalid." }));
 builder.Services.AddEndpointsApiExplorer();
@@ -89,9 +92,15 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJw
     options.RequireHttpsMetadata = true;
     options.TokenValidationParameters = new TokenValidationParameters
     {
-        ValidateIssuer = true, ValidIssuer = issuer, ValidateAudience = true, ValidAudience = audience,
-        ValidateLifetime = true, RequireExpirationTime = true, ClockSkew = TimeSpan.Zero,
-        ValidateIssuerSigningKey = true, IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey)),
+        ValidateIssuer = true,
+        ValidIssuer = issuer,
+        ValidateAudience = true,
+        ValidAudience = audience,
+        ValidateLifetime = true,
+        RequireExpirationTime = true,
+        ClockSkew = TimeSpan.Zero,
+        ValidateIssuerSigningKey = true,
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey)),
         ValidAlgorithms = new[] { SecurityAlgorithms.HmacSha256 },
         RoleClaimType = "role"  // Use short claim name instead of the default ClaimTypes.Role URI
     };
@@ -131,13 +140,7 @@ using (var scope = app.Services.CreateScope())
         }
     }
 
-    // =========================================================================================
-    // [DEPLOYMENT - SEGURIDAD]: SEMBRADO DE USUARIOS INICIALES
-    // 1. Admin: Se crea con las credenciales de 'InitialAdmin:Email' e 'InitialAdmin:Password'
-    //    (o variables de entorno 'InitialAdmin__Email' e 'InitialAdmin__Password').
-    // 2. Cajero Demo: Solo se recomienda en modo desarrollo o para demos de portafolio.
-    //    En un despliegue de producción real, puedes comentar la línea de SeedDemoCashierAsync.
-    // =========================================================================================
+
     await DataSeeder.SeedInitialAdminAsync(db, app.Configuration, logger);
 
     if (app.Environment.IsDevelopment() || app.Configuration.GetValue<bool>("EnableDemoSeeding", true))
@@ -147,11 +150,17 @@ using (var scope = app.Services.CreateScope())
 }
 
 app.UseMiddleware<GlobalExceptionHandlerMiddleware>();
-if (app.Environment.IsDevelopment()) { app.UseSwagger(); app.UseSwaggerUI(); }
+app.UseSwagger();
+app.UseSwaggerUI(c =>
+{
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "InventorySystemCloud API v1");
+    c.RoutePrefix = string.Empty; //  This makes Swagger the home page (root)
+});
+
 app.UseHttpsRedirection();
 
-// [DEPLOYMENT - SEGURIDAD]: CORS
-// En producción, asegúrate de restringir los orígenes permitidos al dominio real de tu frontend
+
+
 app.UseCors("FrontendDevelopment");
 app.UseRateLimiter();
 app.UseAuthentication();
