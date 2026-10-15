@@ -1,32 +1,33 @@
 # Etapa 1: Compilación
-FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
-WORKDIR /src
+FROM ://microsoft.com AS build
+WORKDIR /app
 
-# Copiar el archivo de solución si existe en la raíz
+# Copiar el archivo de solución (.sln) si existe
 COPY *.sln ./
 
-# Buscar y copiar todos los archivos .csproj sin importar el nivel de carpetas
-COPY src/InventorySystemCloud.Api/InventorySystemCloud.Api.csproj src/InventorySystemCloud.Api/
-COPY src/InventorySystemCloud.Application/InventorySystemCloud.Application.csproj src/InventorySystemCloud.Application/
-COPY src/InventorySystemCloud.Domain/InventorySystemCloud.Domain.csproj src/InventorySystemCloud.Domain/
-COPY src/InventorySystemCloud.Shared/InventorySystemCloud.Shared.csproj src/InventorySystemCloud.Shared/
-COPY src/InventorySystemCloud.Infrastructure/InventorySystemCloud.Infrastructure.csproj src/InventorySystemCloud.Infrastructure/
+#  Busca todos los archivos .csproj en cualquier subcarpeta 
+# y los copia al contenedor manteniendo la estructura para que funcione el restore
+COPY **/InventorySystemCloud.Api.csproj ./src/InventorySystemCloud.Api/
+COPY **/InventorySystemCloud.Infrastructure.csproj ./src/InventorySystemCloud.Infrastructure/
+COPY **/InventorySystemCloud.Application.csproj ./src/InventorySystemCloud.Application/
+COPY **/InventorySystemCloud.Domain.csproj ./src/InventorySystemCloud.Domain/
+COPY **/InventorySystemCloud.Shared.csproj ./src/InventorySystemCloud.Shared/
 
-# Restaurar las dependencias de la API principal y sus capas internas
-RUN dotnet restore "src/InventorySystemCloud.Api/InventorySystemCloud.Api.csproj"
+# Restaurar dependencias usando un comodín flexible
+RUN dotnet restore **/InventorySystemCloud.Api.csproj
 
-# Copiar el resto del código fuente del repositorio
+# Copiar absolutamente todo el resto del código del repositorio
 COPY . .
 
-# Compilar y publicar los binarios optimizados para producción en la carpeta /app/publish
-RUN dotnet publish "src/InventorySystemCloud.Api/InventorySystemCloud.Api.csproj" -c Release -o /app/publish /p:UseAppHost=false
+# Compilar y publicar buscando el archivo del proyecto ejecutable directamente
+RUN dotnet publish **/InventorySystemCloud.Api.csproj -c Release -o /app/publish /p:UseAppHost=false
 
-# Etapa 2: Entorno de ejecución (Runtime) ligero para producción
-FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS final
+# Etapa 2: Entorno de ejecución para producción
+FROM ://microsoft.com AS final
 WORKDIR /app
 COPY --from=build /app/publish .
 
-# Forzar el puerto 10000 que requiere Render para tráfico HTTP libre
+# Configurar puerto dinámico para Render
 ENV ASPNETCORE_URLS=http://+:10000
 EXPOSE 10000
 
