@@ -1,4 +1,4 @@
-FROM ://microsoft.com AS build
+
 WORKDIR /app
 
 COPY *.sln ./
