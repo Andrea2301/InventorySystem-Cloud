@@ -140,7 +140,7 @@ using (var scope = app.Services.CreateScope())
         }
     }
 
-
+ 
     await DataSeeder.SeedInitialAdminAsync(db, app.Configuration, logger);
 
     if (app.Environment.IsDevelopment() || app.Configuration.GetValue<bool>("EnableDemoSeeding", true))
