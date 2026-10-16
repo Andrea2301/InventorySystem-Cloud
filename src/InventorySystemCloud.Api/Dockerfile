@@ -12,6 +12,8 @@ EXPOSE 8081
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
+COPY . /debug
+RUN find /debug -maxdepth 3 -not -path "*/.git/*" | sort | head -80
 COPY ["src/InventorySystemCloud.Api/InventorySystemCloud.Api.csproj", "src/InventorySystemCloud.Api/"]
 COPY ["src/InventorySystemCloud.Application/InventorySystemCloud.Application.csproj", "src/InventorySystemCloud.Application/"]
 COPY ["src/InventorySystemCloud.Domain/InventorySystemCloud.Domain.csproj", "src/InventorySystemCloud.Domain/"]
