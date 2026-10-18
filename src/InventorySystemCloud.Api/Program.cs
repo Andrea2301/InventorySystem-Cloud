@@ -58,10 +58,19 @@ builder.Services.Configure<CloudinarySettings>(builder.Configuration.GetSection(
 builder.Services.AddControllers();
 builder.Services.AddCors(options => options.AddPolicy("FrontendDevelopment", policy =>
 {
-    var configuredOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>();
-    var isDemo = builder.Configuration.GetValue<bool>("IsDemoMode", true);
+    var configuredOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? Array.Empty<string>();
+    var defaultOrigins = new[]
+    {
+        "https://inventorysystem-cloud-front.onrender.com",
+        "http://localhost:4200",
+        "https://localhost:4200"
+    };
 
-    if (isDemo || configuredOrigins == null || configuredOrigins.Length == 0 || configuredOrigins.Contains("*"))
+    var origins = configuredOrigins.Length > 0
+        ? configuredOrigins.Union(defaultOrigins).Distinct().ToArray()
+        : defaultOrigins;
+
+    if (origins.Contains("*"))
     {
         policy.AllowAnyOrigin()
               .AllowAnyHeader()
@@ -69,7 +78,7 @@ builder.Services.AddCors(options => options.AddPolicy("FrontendDevelopment", pol
     }
     else
     {
-        policy.WithOrigins(configuredOrigins)
+        policy.WithOrigins(origins)
               .AllowAnyHeader()
               .AllowAnyMethod();
     }
