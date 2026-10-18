@@ -107,6 +107,9 @@ namespace InventorySystemCloud.Application.Services
 
             var validPermissions = FilterValidPermissions(request.Permissions);
 
+            if (user.Email.Equals("cajero@demo.com", StringComparison.OrdinalIgnoreCase) && validPermissions.Count == 0)
+                return ApiResponse<UserResponseDto>.FailureResponse("En la versión demo, no es posible revocar todos los permisos del cajero de demostración.", statusCode: 400);
+
             // Remove existing permissions
             _context.UserPermissions.RemoveRange(user.Permissions);
             user.Permissions.Clear();
@@ -139,6 +142,12 @@ namespace InventorySystemCloud.Application.Services
 
             if (user.Role == UserRole.Admin && !isActive)
                 return ApiResponse<UserResponseDto>.FailureResponse("No se puede desactivar la cuenta del Administrador principal.", statusCode: 400);
+
+            if (!isActive && (user.Email.Equals("cajero@demo.com", StringComparison.OrdinalIgnoreCase) ||
+                             user.Email.Equals("admin@demo.com", StringComparison.OrdinalIgnoreCase)))
+            {
+                return ApiResponse<UserResponseDto>.FailureResponse("En la versión demo, los usuarios de demostración principales están protegidos contra desactivación para asegurar la continuidad de las pruebas.", statusCode: 400);
+            }
 
             user.IsActive = isActive;
             // Invalidate existing active tokens

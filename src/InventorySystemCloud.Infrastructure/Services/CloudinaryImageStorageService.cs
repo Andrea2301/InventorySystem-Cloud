@@ -41,8 +41,9 @@ namespace InventorySystemCloud.Infrastructure.Services
         {
             if (_cloudinary == null)
             {
-                _logger.LogError("Cloudinary client is not initialized due to missing configuration.");
-                return AppImageUploadResult.Failed("Cloudinary credentials are not configured in appsettings.");
+                _logger.LogWarning("Cloudinary client is not initialized due to missing configuration. Returning a simulated demo image URL for '{FileName}'.", fileName);
+                var demoUrl = "https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?auto=format&fit=crop&w=600&q=80";
+                return AppImageUploadResult.Succeeded(demoUrl, $"demo/{Guid.NewGuid():N}");
             }
 
             try
@@ -82,8 +83,14 @@ namespace InventorySystemCloud.Infrastructure.Services
 
         public async Task<bool> DeleteImageAsync(string publicId)
         {
-            if (_cloudinary == null || string.IsNullOrWhiteSpace(publicId))
+            if (string.IsNullOrWhiteSpace(publicId))
                 return false;
+
+            if (_cloudinary == null)
+            {
+                _logger.LogInformation("Cloudinary is not configured. Simulating successful deletion for: {PublicId}", publicId);
+                return true;
+            }
 
             try
             {

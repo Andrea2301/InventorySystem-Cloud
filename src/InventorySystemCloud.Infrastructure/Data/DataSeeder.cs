@@ -31,10 +31,19 @@ namespace InventorySystemCloud.Infrastructure.Data
 
                 if (string.IsNullOrWhiteSpace(adminEmail) || string.IsNullOrWhiteSpace(adminPassword))
                 {
-                    logger.LogWarning(
-                        "Initial administrator not seeded: 'InitialAdmin:Email' or 'InitialAdmin:Password' are not configured. " +
-                        "Configure them in environment variables or configuration files to create the initial admin.");
-                    return;
+                    var isDemo = !string.Equals(configuration["IsDemoMode"], "false", StringComparison.OrdinalIgnoreCase);
+                    if (isDemo)
+                    {
+                        adminEmail = "admin@demo.com";
+                        adminPassword = "AdminDemo123*!";
+                    }
+                    else
+                    {
+                        logger.LogWarning(
+                            "Initial administrator not seeded: 'InitialAdmin:Email' or 'InitialAdmin:Password' are not configured. " +
+                            "Configure them in environment variables or configuration files to create the initial admin.");
+                        return;
+                    }
                 }
 
                 var existingByEmail = await context.Users.AnyAsync(u => u.Email == adminEmail);
@@ -76,7 +85,7 @@ namespace InventorySystemCloud.Infrastructure.Data
         {
             try
             {
-                var cashierEmail = configuration["DemoCashier:Email"]?.Trim().ToLowerInvariant() ?? "cajero@inventorycloud.com";
+                var cashierEmail = configuration["DemoCashier:Email"]?.Trim().ToLowerInvariant() ?? "cajero@demo.com";
                 var cashierPassword = configuration["DemoCashier:Password"] ?? "CashierDemo123*!";
 
                 var cashierExists = await context.Users.AnyAsync(u => u.Email == cashierEmail);

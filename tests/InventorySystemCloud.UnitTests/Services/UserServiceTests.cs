@@ -144,5 +144,65 @@ namespace InventorySystemCloud.UnitTests.Services
             result.Data.Should().Contain(g => g.Module == "Ventas");
             result.Data.Should().Contain(g => g.Module == "Clientes");
         }
+
+        [Fact]
+        public async Task ToggleStatusAsync_WhenTargetIsDemoCashier_ReturnsBadRequest()
+        {
+            // Arrange
+            using var context = GetInMemoryDbContext();
+            var mockEmail = new Mock<IEmailService>();
+            var service = new UserService(context, mockEmail.Object);
+
+            var demoCashier = new User
+            {
+                Email = "cajero@demo.com",
+                PasswordHash = "hash",
+                Role = UserRole.Cashier,
+                IsActive = true
+            };
+            context.Users.Add(demoCashier);
+            await context.SaveChangesAsync();
+
+            // Act: try deactivating demo cashier
+            var result = await service.ToggleStatusAsync(demoCashier.Id, false);
+
+            // Assert
+            result.Success.Should().BeFalse();
+            result.StatusCode.Should().Be(400);
+            result.Message.Should().Contain("versión demo");
+        }
+
+        [Fact]
+        public async Task UpdatePermissionsAsync_WhenTargetIsDemoCashierAndPermissionsEmpty_ReturnsBadRequest()
+        {
+            // Arrange
+            using var context = GetInMemoryDbContext();
+            var mockEmail = new Mock<IEmailService>();
+            var service = new UserService(context, mockEmail.Object);
+
+            var demoCashier = new User
+            {
+                Email = "cajero@demo.com",
+                PasswordHash = "hash",
+                Role = UserRole.Cashier,
+                IsActive = true
+            };
+            demoCashier.Permissions.Add(new UserPermission { Permission = AppPermissions.Sales.Create, User = demoCashier });
+            context.Users.Add(demoCashier);
+            await context.SaveChangesAsync();
+
+            var emptyPermissionsDto = new UpdateUserPermissionsDto
+            {
+                Permissions = new List<string>()
+            };
+
+            // Act
+            var result = await service.UpdatePermissionsAsync(demoCashier.Id, emptyPermissionsDto);
+
+            // Assert
+            result.Success.Should().BeFalse();
+            result.StatusCode.Should().Be(400);
+            result.Message.Should().Contain("versión demo");
+        }
     }
 }
