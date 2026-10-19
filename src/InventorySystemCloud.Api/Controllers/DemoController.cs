@@ -7,8 +7,8 @@ using Microsoft.Extensions.Logging;
 namespace InventorySystemCloud.Api.Controllers
 {
     /// <summary>
-    /// Controlador exclusivo para la versión de demostración (Demo).
-    /// Provee credenciales de prueba, información del entorno y reinicio del estado de la base de datos.
+    /// Controller exclusively for the demo version.
+    /// Provides test credentials, environment information, and a reset of the database state.
     /// </summary>
     [ApiController]
     [Route("demo")]
@@ -24,7 +24,7 @@ namespace InventorySystemCloud.Api.Controllers
         }
 
         /// <summary>
-        /// Obtiene las credenciales preconfiguradas para probar la aplicación con distintos roles.
+        /// Obtain the preconfigured credentials to test the application with different roles..
         /// </summary>
         [HttpGet("credentials")]
         public IActionResult GetCredentials()
@@ -32,7 +32,7 @@ namespace InventorySystemCloud.Api.Controllers
             return Ok(new
             {
                 success = true,
-                message = "Credenciales del entorno Demo para pruebas funcionales.",
+                message = "Test credentials for the Demo environment.",
                 data = new
                 {
                     environment = "Demo",
@@ -43,38 +43,38 @@ namespace InventorySystemCloud.Api.Controllers
                             role = "Administrador",
                             email = "admin@demo.com",
                             password = "AdminDemo123*!",
-                            description = "Acceso irrestricto: Gestión de usuarios y cajeros, asignación de permisos, reportes financieros en Excel, auditoría, productos, clientes, ventas y compras."
+                            description = "Unrestricted access: User and cashier management, permission assignment, financial reports in Excel, auditing, products, customers, sales, and purchases."
                         },
                         new
                         {
                             role = "Cajero",
                             email = "cajero@demo.com",
                             password = "CashierDemo123*!",
-                            description = "Acceso operativo: Punto de Venta (POS), generación de ventas, emisión y descarga de facturas en PDF, gestión de clientes y consulta de catálogo."
+                            description = "Operational access: Point of Sale (POS), sales generation, issuing and downloading invoices in PDF format, customer management, and catalog browsing."
                         }
                     },
                     features = new[]
                     {
-                        "Punto de Venta (POS) con cálculo automático de cambio",
-                        "Emisión de facturas comerciales generadas en PDF con QuestPDF",
-                        "Control de inventario en tiempo real y detección de productos sin stock",
-                        "Reportes analíticos de ventas por rango de fechas y productos más vendidos",
-                        "Exportación de inventario y ventas a formato Excel (.xlsx)",
-                        "Seguridad JWT con Claims y RBAC granular con Refresh Tokens"
-                    },
-                    note = "En este entorno demo, los usuarios principales están protegidos contra desactivación o borrado."
+                      "Point of Sale (POS) with automatic change calculation",
+                      "Issuance of commercial invoices generated as PDFs using QuestPDF",
+                      "Real-time inventory control and detection of out-of-stock products",
+                      "Analytical sales reports by date range and top-selling products",
+                      "Export of inventory and sales data to Excel (.xlsx) format",
+                      "JWT security with claims and granular RBAC, including refresh tokens"
+                   },
+                    note = "In this demo environment, main users are protected against deactivation or deletion."
                 }
             });
         }
 
         /// <summary>
-        /// Retorna información general y estado del entorno demo.
+        /// Obtain general information and status of the demo environment.
         /// </summary>
         [HttpGet("info")]
         public IActionResult GetDemoInfo() => GetCredentials();
 
         /// <summary>
-        /// Restablece la base de datos demo al estado inicial limpio con productos, clientes, ventas y compras de prueba.
+        ///Reset the demo database to its clean, initial state, including sample products, customers, sales, and purchases.
         /// </summary>
         [HttpPost("reset")]
         public async Task<IActionResult> ResetDemoDatabase()
@@ -85,17 +85,17 @@ namespace InventorySystemCloud.Api.Controllers
                 return Ok(new
                 {
                     success = true,
-                    message = "La base de datos de demostración ha sido restablecida exitosamente a su estado inicial.",
+                    message = "The demonstration database has been successfully restored to its initial state.",
                     timestamp = DateTime.UtcNow
                 });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al restablecer la base de datos demo.");
+                _logger.LogError(ex, "Error resetting the demo database.");
                 return StatusCode(500, new
                 {
                     success = false,
-                    message = "Ocurrió un error al restablecer la base de datos demo. Consulte los registros del servidor."
+                    message = "An error occurred while resetting the demo database. Please check the server logs."
                 });
             }
         }
